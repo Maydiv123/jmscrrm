@@ -45,7 +45,7 @@ export default function Navigation() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="bg-blue-600 w-8 h-8 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">M</span>
+                <span className="text-white font-bold text-lg">J</span>
               </div>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

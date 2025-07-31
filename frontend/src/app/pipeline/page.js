@@ -391,7 +391,7 @@ export default function PipelinePage() {
                       name="job_no"
                       value={formData.job_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       required
                     />
                   </div>
@@ -402,7 +402,7 @@ export default function PipelinePage() {
                       name="job_date"
                       value={formData.job_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -416,7 +416,7 @@ export default function PipelinePage() {
                       name="edi_job_no"
                       value={formData.edi_job_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -426,7 +426,7 @@ export default function PipelinePage() {
                       name="edi_date"
                       value={formData.edi_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -439,7 +439,7 @@ export default function PipelinePage() {
                       name="consignee"
                       value={formData.consignee}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       rows="3"
                     />
                   </div>
@@ -449,7 +449,7 @@ export default function PipelinePage() {
                       name="shipper"
                       value={formData.shipper}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       rows="3"
                     />
                   </div>
@@ -464,7 +464,7 @@ export default function PipelinePage() {
                       name="port_of_discharge"
                       value={formData.port_of_discharge}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -474,7 +474,7 @@ export default function PipelinePage() {
                       name="final_place_of_delivery"
                       value={formData.final_place_of_delivery}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -487,7 +487,7 @@ export default function PipelinePage() {
                       name="port_of_loading"
                       value={formData.port_of_loading}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -497,7 +497,7 @@ export default function PipelinePage() {
                       name="country_of_shipment"
                       value={formData.country_of_shipment}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -511,7 +511,7 @@ export default function PipelinePage() {
                       name="hbl_no"
                       value={formData.hbl_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -521,7 +521,7 @@ export default function PipelinePage() {
                       name="hbl_date"
                       value={formData.hbl_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function PipelinePage() {
                       name="mbl_no"
                       value={formData.mbl_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -544,7 +544,7 @@ export default function PipelinePage() {
                       name="mbl_date"
                       value={formData.mbl_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -558,7 +558,7 @@ export default function PipelinePage() {
                       name="shipping_line"
                       value={formData.shipping_line}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -568,7 +568,7 @@ export default function PipelinePage() {
                       name="forwarder"
                       value={formData.forwarder}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py- text-black"
                     />
                   </div>
                 </div>
@@ -582,7 +582,7 @@ export default function PipelinePage() {
                       name="weight"
                       value={formData.weight}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       step="0.01"
                     />
                   </div>
@@ -593,7 +593,7 @@ export default function PipelinePage() {
                       name="packages"
                       value={formData.packages}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -607,7 +607,7 @@ export default function PipelinePage() {
                       name="invoice_no"
                       value={formData.invoice_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -617,7 +617,7 @@ export default function PipelinePage() {
                       name="invoice_date"
                       value={formData.invoice_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -631,8 +631,8 @@ export default function PipelinePage() {
                       name="gateway_igm"
                       value={formData.gateway_igm}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
-                    />
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />      
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM Date</label>
@@ -641,7 +641,7 @@ export default function PipelinePage() {
                       name="gateway_igm_date"
                       value={formData.gateway_igm_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -654,7 +654,7 @@ export default function PipelinePage() {
                       name="local_igm"
                       value={formData.local_igm}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -664,7 +664,7 @@ export default function PipelinePage() {
                       name="local_igm_date"
                       value={formData.local_igm_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -676,7 +676,7 @@ export default function PipelinePage() {
                     name="commodity"
                     value={formData.commodity}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     rows="2"
                   />
                 </div>
@@ -689,7 +689,7 @@ export default function PipelinePage() {
                       name="eta"
                       value={formData.eta}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -699,7 +699,7 @@ export default function PipelinePage() {
                       name="current_status"
                       value={formData.current_status}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -713,7 +713,7 @@ export default function PipelinePage() {
                       name="container_no"
                       value={formData.container_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -722,7 +722,7 @@ export default function PipelinePage() {
                       name="container_size"
                       value={formData.container_size}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
                     >
                       <option value="20">20'</option>
                       <option value="40">40'</option>
@@ -736,7 +736,7 @@ export default function PipelinePage() {
                       name="date_of_arrival"
                       value={formData.date_of_arrival}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -749,7 +749,7 @@ export default function PipelinePage() {
                       name="assigned_to_stage2"
                       value={formData.assigned_to_stage2}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     >
                       <option value={0}>Select Employee</option>
                       {stage2Employees.map(emp => (
@@ -763,7 +763,7 @@ export default function PipelinePage() {
                       name="assigned_to_stage3"
                       value={formData.assigned_to_stage3}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     >
                       <option value={0}>Select Employee</option>
                       {stage3Employees.map(emp => (
@@ -777,7 +777,7 @@ export default function PipelinePage() {
                       name="customer_id"
                       value={formData.customer_id}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     >
                       <option value={0}>Select Customer</option>
                       {customers.map(customer => (
@@ -799,7 +799,7 @@ export default function PipelinePage() {
                       value={formData.notification_email}
                       onChange={handleInputChange}
                       placeholder="Enter email address to receive notifications"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Leave empty to use default admin email. This email will receive notifications when stages are completed.

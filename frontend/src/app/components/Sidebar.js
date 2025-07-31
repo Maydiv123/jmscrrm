@@ -90,7 +90,7 @@ export default function Sidebar({ userRole, isAdmin }) {
             <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">J</span>
             </div>
-            <span className="font-bold text-gray-800">Jms CRM</span>
+            <span className="font-bold text-gray-800">Job Management System</span>
           </div>
         )}
         <button

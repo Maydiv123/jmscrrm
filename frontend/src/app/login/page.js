@@ -114,7 +114,7 @@ export default function LoginPage() {
           <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <span className="text-3xl text-white font-bold">J</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Jms CRM</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Job Management System</h1>
           <p className="text-gray-600">Sign in to your account</p>
         </div>
 
