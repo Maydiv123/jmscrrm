@@ -383,7 +383,7 @@ export default function Stage3Page() {
                       name="exam_date"
                       value={formData.exam_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -393,7 +393,7 @@ export default function Stage3Page() {
                       name="out_of_charge"
                       value={formData.out_of_charge}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -407,7 +407,7 @@ export default function Stage3Page() {
                       name="clearance_exps"
                       value={formData.clearance_exps}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       step="0.01"
                     />
                   </div>
@@ -418,7 +418,7 @@ export default function Stage3Page() {
                       name="stamp_duty"
                       value={formData.stamp_duty}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       step="0.01"
                     />
                   </div>
@@ -432,7 +432,7 @@ export default function Stage3Page() {
                       name="custodian"
                       value={formData.custodian}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -442,7 +442,7 @@ export default function Stage3Page() {
                       name="offloading_charges"
                       value={formData.offloading_charges}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       step="0.01"
                     />
                   </div>
@@ -453,7 +453,7 @@ export default function Stage3Page() {
                       name="transport_detention"
                       value={formData.transport_detention}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       step="0.01"
                     />
                   </div>
@@ -466,7 +466,7 @@ export default function Stage3Page() {
                     name="dispatch_info"
                     value={formData.dispatch_info}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     rows="3"
                     placeholder="Enter dispatch details, delivery instructions, etc."
                   />
@@ -507,7 +507,7 @@ export default function Stage3Page() {
                             type="text"
                             value={container.container_no}
                             onChange={(e) => handleContainerChange(index, 'container_no', e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           />
                         </div>
                         <div>
@@ -515,7 +515,7 @@ export default function Stage3Page() {
                           <select
                             value={container.size}
                             onChange={(e) => handleContainerChange(index, 'size', e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           >
                             <option value="20">20'</option>
                             <option value="40">40'</option>
@@ -528,7 +528,7 @@ export default function Stage3Page() {
                             type="text"
                             value={container.vehicle_no}
                             onChange={(e) => handleContainerChange(index, 'vehicle_no', e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           />
                         </div>
                         <div>
@@ -537,7 +537,7 @@ export default function Stage3Page() {
                             type="date"
                             value={container.date_of_offloading}
                             onChange={(e) => handleContainerChange(index, 'date_of_offloading', e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           />
                         </div>
                         <div>
@@ -546,7 +546,7 @@ export default function Stage3Page() {
                             type="date"
                             value={container.empty_return_date}
                             onChange={(e) => handleContainerChange(index, 'empty_return_date', e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           />
                         </div>
                       </div>

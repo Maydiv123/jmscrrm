@@ -314,7 +314,7 @@ export default function Stage4Page() {
                       name="bill_no"
                       value={formData.bill_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       placeholder="Enter bill number"
                     />
                   </div>
@@ -325,7 +325,7 @@ export default function Stage4Page() {
                       name="bill_date"
                       value={formData.bill_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -341,7 +341,7 @@ export default function Stage4Page() {
                         name="amount_taxable"
                         value={formData.amount_taxable}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                         step="0.01"
                       />
                     </div>
@@ -352,7 +352,7 @@ export default function Stage4Page() {
                         name="gst_5_percent"
                         value={formData.gst_5_percent}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                         step="0.01"
                       />
                     </div>
@@ -363,7 +363,7 @@ export default function Stage4Page() {
                         name="gst_18_percent"
                         value={formData.gst_18_percent}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                         step="0.01"
                       />
                     </div>
@@ -384,7 +384,7 @@ export default function Stage4Page() {
                       name="bill_mail"
                       value={formData.bill_mail}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       placeholder="Email address for bill"
                     />
                   </div>
@@ -395,7 +395,7 @@ export default function Stage4Page() {
                       name="bill_courier"
                       value={formData.bill_courier}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       placeholder="Courier service used"
                     />
                   </div>
@@ -408,7 +408,7 @@ export default function Stage4Page() {
                     name="courier_date"
                     value={formData.courier_date}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                   />
                 </div>
 
@@ -423,7 +423,7 @@ export default function Stage4Page() {
                         name="acknowledge_date"
                         value={formData.acknowledge_date}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       />
                     </div>
                     <div>
@@ -433,7 +433,7 @@ export default function Stage4Page() {
                         name="acknowledge_name"
                         value={formData.acknowledge_name}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                         placeholder="Name of person acknowledging"
                       />
                     </div>

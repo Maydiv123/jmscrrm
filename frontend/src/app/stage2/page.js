@@ -327,7 +327,7 @@ export default function Stage2Page() {
                       name="hsn_code"
                       value={formData.hsn_code}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -337,7 +337,7 @@ export default function Stage2Page() {
                       name="documents_type"
                       value={formData.documents_type}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export default function Stage2Page() {
                     name="filing_requirement"
                     value={formData.filing_requirement}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     rows="3"
                   />
                 </div>
@@ -362,7 +362,7 @@ export default function Stage2Page() {
                       name="checklist_sent_date"
                       value={formData.checklist_sent_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -372,7 +372,7 @@ export default function Stage2Page() {
                       name="approval_date"
                       value={formData.approval_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -386,7 +386,7 @@ export default function Stage2Page() {
                       name="bill_of_entry_no"
                       value={formData.bill_of_entry_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -396,7 +396,7 @@ export default function Stage2Page() {
                       name="bill_of_entry_date"
                       value={formData.bill_of_entry_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -410,7 +410,7 @@ export default function Stage2Page() {
                       name="debit_note"
                       value={formData.debit_note}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -420,7 +420,7 @@ export default function Stage2Page() {
                       name="debit_paid_by"
                       value={formData.debit_paid_by}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -434,7 +434,7 @@ export default function Stage2Page() {
                       name="duty_amount"
                       value={formData.duty_amount}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       step="0.01"
                     />
                   </div>
@@ -445,7 +445,7 @@ export default function Stage2Page() {
                       name="duty_paid_by"
                       value={formData.duty_paid_by}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
@@ -459,7 +459,7 @@ export default function Stage2Page() {
                       name="ocean_freight"
                       value={formData.ocean_freight}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       step="0.01"
                     />
                   </div>
@@ -470,7 +470,7 @@ export default function Stage2Page() {
                       name="destination_charges"
                       value={formData.destination_charges}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       step="0.01"
                     />
                   </div>
@@ -485,7 +485,7 @@ export default function Stage2Page() {
                       name="original_doct_recd_date"
                       value={formData.original_doct_recd_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -495,7 +495,7 @@ export default function Stage2Page() {
                       name="drn_no"
                       value={formData.drn_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                   <div>
@@ -505,7 +505,7 @@ export default function Stage2Page() {
                       name="irn_no"
                       value={formData.irn_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
                 </div>
