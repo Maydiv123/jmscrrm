@@ -38,31 +38,37 @@ class PipelineService {
           },
           {
             model: Stage1Data,
+            as: "Stage1",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
             model: Stage2Data,
+            as: "Stage2",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
             model: Stage3Data,
-            include: [
-              {
-                model: Stage3Container,
-                attributes: { exclude: ["created_at"] },
-              },
-            ],
+            as: "Stage3",
+            attributes: { exclude: ["created_at", "updated_at"] },
+          },
+          // CORRECTION: Stage3Container is directly associated with PipelineJob
+          {
+            model: Stage3Container,
+            as: "Stage3Containers",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
             model: Stage4Data,
+            as: "Stage4",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
             model: JobUpdate,
+            as: "Updates",
             include: [
               {
                 model: User,
+                as: "User",
                 attributes: ["username"],
               },
             ],
@@ -105,31 +111,37 @@ class PipelineService {
           },
           {
             model: Stage1Data,
+            as: "Stage1",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
             model: Stage2Data,
+            as: "Stage2",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
             model: Stage3Data,
-            include: [
-              {
-                model: Stage3Container,
-                attributes: { exclude: ["created_at"] },
-              },
-            ],
+            as: "Stage3",
+            attributes: { exclude: ["created_at", "updated_at"] },
+          },
+          // CORRECTION: Stage3Container is directly associated with PipelineJob
+          {
+            model: Stage3Container,
+            as: "Stage3Containers",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
             model: Stage4Data,
+            as: "Stage4",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
             model: JobUpdate,
+            as: "Updates",
             include: [
               {
                 model: User,
+                as: "User",
                 attributes: ["username"],
               },
             ],
@@ -441,6 +453,7 @@ class PipelineService {
   }
 
   // Helper method for job includes
+
   getJobIncludes() {
     return [
       {
@@ -465,24 +478,27 @@ class PipelineService {
       },
       {
         model: Stage1Data,
+        as: "Stage1", // Add the alias
         attributes: { exclude: ["created_at", "updated_at"] },
       },
       {
         model: Stage2Data,
+        as: "Stage2", // Add the alias
         attributes: { exclude: ["created_at", "updated_at"] },
       },
       {
         model: Stage3Data,
-        include: [
-          {
-            model: Stage3Container,
-            attributes: { exclude: ["created_at"] },
-          },
-        ],
+        as: "Stage3", // Add the alias
+        attributes: { exclude: ["created_at", "updated_at"] },
+      },
+      {
+        model: Stage3Container,
+        as: "Stage3Containers", // Add the alias
         attributes: { exclude: ["created_at", "updated_at"] },
       },
       {
         model: Stage4Data,
+        as: "Stage4", // Add the alias
         attributes: { exclude: ["created_at", "updated_at"] },
       },
     ];

@@ -4,13 +4,15 @@ const notificationService = require('../services/notificationService');
 class PipelineController {
   // Get all jobs (admin only)
   async getAllJobs(req, res) {
+  console.log("getAllJobs - Session:", req.session);
+  console.log("getAllJobs - User:", req.user);
     try {
       if (!req.session.userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
       // Check if user is admin or subadmin
-      if (!req.user.is_admin && req.user.role !== 'subadmin') {
+      if (!req.user.isAdmin && req.user.role !== 'subadmin') {
         return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -23,6 +25,8 @@ class PipelineController {
 
   // Get jobs for current user based on role
   async getMyJobs(req, res) {
+      console.log("getAllJobs - Session:", req.session);
+  console.log("getAllJobs - User:", req.user);
     try {
       if (!req.session.userId) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -31,7 +35,7 @@ class PipelineController {
       const userId = req.session.userId;
       
       // Admin and subadmin get all jobs
-      if (req.user.is_admin || req.user.role === 'subadmin') {
+      if (req.user.isAdmin || req.user.role === 'subadmin') {
         const jobs = await pipelineService.getAllJobs();
         return res.json(jobs);
       }
@@ -93,7 +97,7 @@ class PipelineController {
       }
 
       // Check if user is admin or subadmin
-      if (!req.user.is_admin && req.user.role !== 'subadmin') {
+      if (!req.user.isAdmin && req.user.role !== 'subadmin') {
         return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -119,7 +123,7 @@ class PipelineController {
       }
 
       // Check if user is stage2 employee or admin
-      if (!req.user.is_admin && req.user.role !== 'stage2_employee') {
+      if (!req.user.isAdmin && req.user.role !== 'stage2_employee') {
         return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -142,7 +146,7 @@ class PipelineController {
     }
 
     // Check if user is stage3 employee or admin
-    if (!req.user.is_admin && req.user.role !== 'stage3_employee') {
+    if (!req.user.isAdmin && req.user.role !== 'stage3_employee') {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -167,7 +171,7 @@ async updateStage4(req, res) {
     }
 
     // Check if user is customer or admin
-    if (!req.user.is_admin && req.user.role !== 'customer') {
+    if (!req.user.isAdmin && req.user.role !== 'customer') {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -301,7 +305,7 @@ async deleteFile(req, res) {
     }
 
     // Check if user is the uploader or admin
-    if (file.uploaded_by !== req.session.userId && !req.user.is_admin) {
+    if (file.uploaded_by !== req.session.userId && !req.user.isAdmin) {
       return res.status(403).json({ error: 'You can only delete your own files' });
     }
 
@@ -330,7 +334,7 @@ async deleteFile(req, res) {
     const userId = req.session.userId;
     
     // Admin and subadmin have access to all jobs
-    if (req.user.is_admin || req.user.role === 'subadmin') {
+    if (req.user.isAdmin || req.user.role === 'subadmin') {
       return true;
     }
 

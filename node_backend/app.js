@@ -1,3 +1,4 @@
+// app.js - Update session configuration
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
@@ -10,8 +11,6 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const pipelineRoutes = require('./routes/pipelineRoutes');
-const fileRoutes = require('./routes/fileRoutes');
-const debugRoutes = require('./routes/debugRoutes');
 
 const app = express();
 
@@ -20,6 +19,7 @@ if (!process.env.SESSION_SECRET) {
   console.error('FATAL ERROR: SESSION_SECRET is not defined.');
   process.exit(1);
 }
+
 async function testConnection() {
   try {
     await sequelize.authenticate();
@@ -29,7 +29,8 @@ async function testConnection() {
     process.exit(1);
   }
 }
-// Middleware
+
+// Middleware - IMPORTANT: Session middleware should come before routes
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true
@@ -37,10 +38,27 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Session store configuration - Use a proper session store for production
+const MySQLStore = require('express-mysql-session')(session);
+const sessionStore = new MySQLStore({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  clearExpired: true,
+  checkExpirationInterval: 900000, // Check every 15 minutes
+  expiration: 7 * 24 * 60 * 60 * 1000, // 7 days
+});
+
+// Session middleware
 app.use(session({
-  secret: process.env.SESSION_KEY || 'default-session-key-change-in-production',
+  secret: process.env.SESSION_SECRET || 'default-session-key-change-in-production',
+  store: sessionStore, // Use database store for persistence
   resave: false,
   saveUninitialized: false,
+  rolling: true, // Reset expiration on every request
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true,
@@ -49,26 +67,35 @@ app.use(session({
   }
 }));
 
-
+// Add session debugging middleware
+app.use((req, res, next) => {
+  console.log('Session ID:', req.sessionID);
+  console.log('Session data:', req.session);
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/pipeline', pipelineRoutes);
-app.use('/api/files', fileRoutes);
-app.use('/api/debug', debugRoutes);
 
-// Test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({ message: "Test endpoint working" });
+// Test endpoint with session check
+app.get('/api/test-session', (req, res) => {
+  console.log('Test session endpoint - Session data:', req.session);
+  res.json({ 
+    message: "Session test endpoint working",
+    session: req.session,
+    sessionId: req.sessionID
+  });
 });
 
 const PORT = process.env.PORT || 8080;
+
 async function startServer() {
   await testConnection();
   
-  // Sync database (set force: true only in development to drop and recreate tables)
+  // Sync database
   await sequelize.sync({ force: false });
   console.log('Database synced');
   

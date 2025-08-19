@@ -1,5 +1,5 @@
-const nodemailer = require('nodemailer');
-const { User, PipelineJob, Stage1Data } = require('../models');
+const nodemailer = require("nodemailer");
+const { User, PipelineJob, Stage1Data } = require("../models");
 
 class NotificationService {
   constructor() {
@@ -8,14 +8,16 @@ class NotificationService {
 
   createTransporter() {
     // Get SMTP configuration from environment variables
-    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
     const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;
     const fromEmail = process.env.FROM_EMAIL || smtpUser;
 
     if (!smtpUser || !smtpPass) {
-      console.warn('SMTP credentials not configured. Email notifications will be disabled.');
+      console.warn(
+        "SMTP credentials not configured. Email notifications will be disabled."
+      );
       return null;
     }
 
@@ -25,20 +27,22 @@ class NotificationService {
       secure: smtpPort === 465,
       auth: {
         user: smtpUser,
-        pass: smtpPass
-      }
+        pass: smtpPass,
+      },
     });
   }
 
   // Send stage completion email
   async sendStageCompletionEmail(emailData) {
     if (!this.transporter) {
-      console.warn('Email transporter not configured. Skipping email notification.');
+      console.warn(
+        "Email transporter not configured. Skipping email notification."
+      );
       return false;
     }
 
     const subject = `Stage Completion Notification - Job ${emailData.jobNo}`;
-    
+
     const html = `
 <!DOCTYPE html>
 <html>
@@ -124,13 +128,15 @@ class NotificationService {
         from: process.env.FROM_EMAIL || process.env.SMTP_USER,
         to: emailData.adminEmail,
         subject: subject,
-        html: html
+        html: html,
       });
 
-      console.log(`Stage completion email sent successfully to ${emailData.adminEmail} for job ${emailData.jobNo}`);
+      console.log(
+        `Stage completion email sent successfully to ${emailData.adminEmail} for job ${emailData.jobNo}`
+      );
       return true;
     } catch (error) {
-      console.error('Failed to send stage completion email:', error);
+      console.error("Failed to send stage completion email:", error);
       return false;
     }
   }
@@ -138,12 +144,14 @@ class NotificationService {
   // Send job creation email
   async sendJobCreationEmail(jobNo, createdBy, adminEmail) {
     if (!this.transporter) {
-      console.warn('Email transporter not configured. Skipping email notification.');
+      console.warn(
+        "Email transporter not configured. Skipping email notification."
+      );
       return false;
     }
 
     const subject = `New Pipeline Job Created - ${jobNo}`;
-    
+
     const html = `
 <!DOCTYPE html>
 <html>
@@ -205,13 +213,15 @@ class NotificationService {
         from: process.env.FROM_EMAIL || process.env.SMTP_USER,
         to: adminEmail,
         subject: subject,
-        html: html
+        html: html,
       });
 
-      console.log(`Job creation email sent successfully to ${adminEmail} for job ${jobNo}`);
+      console.log(
+        `Job creation email sent successfully to ${adminEmail} for job ${jobNo}`
+      );
       return true;
     } catch (error) {
-      console.error('Failed to send job creation email:', error);
+      console.error("Failed to send job creation email:", error);
       return false;
     }
   }
@@ -247,13 +257,13 @@ class NotificationService {
         completedBy: userDetails.username,
         completedAt: new Date().toLocaleString(),
         nextStage: nextStage,
-        adminEmail: notificationEmail
+        adminEmail: notificationEmail,
       };
 
       // Send email
       return await this.sendStageCompletionEmail(emailData);
     } catch (error) {
-      console.error('Failed to send stage completion notification:', error);
+      console.error("Failed to send stage completion notification:", error);
       return false;
     }
   }
@@ -283,7 +293,7 @@ class NotificationService {
         notificationEmail
       );
     } catch (error) {
-      console.error('Failed to send job creation notification:', error);
+      console.error("Failed to send job creation notification:", error);
       return false;
     }
   }
@@ -291,12 +301,12 @@ class NotificationService {
   // Test email connection
   async testEmailConnection() {
     if (!this.transporter) {
-      throw new Error('Email transporter not configured');
+      throw new Error("Email transporter not configured");
     }
 
     try {
       await this.transporter.verify();
-      console.log('Email service connection test successful');
+      console.log("Email service connection test successful");
       return true;
     } catch (error) {
       throw new Error(`Failed to connect to SMTP server: ${error.message}`);
@@ -304,12 +314,16 @@ class NotificationService {
   }
 
   // Helper methods
+  // services/notificationService.js - Fix the getJobDetails method
   async getJobDetails(jobId) {
     const job = await PipelineJob.findByPk(jobId, {
-      include: [{
-        model: Stage1Data,
-        attributes: ['consignee', 'shipper', 'commodity']
-      }]
+      include: [
+        {
+          model: Stage1Data,
+          as: "Stage1", // Add the alias here
+          attributes: ["consignee", "shipper", "commodity"],
+        },
+      ],
     });
 
     if (!job) {
@@ -322,16 +336,15 @@ class NotificationService {
       current_stage: job.current_stage,
       status: job.status,
       created_at: job.created_at,
-      consignee: job.Stage1Data ? job.Stage1Data.consignee : null,
-      shipper: job.Stage1Data ? job.Stage1Data.shipper : null,
-      commodity: job.Stage1Data ? job.Stage1Data.commodity : null,
-      notification_email: job.notification_email
+      consignee: job.Stage1 ? job.Stage1.consignee : null, // Use the alias here too
+      shipper: job.Stage1 ? job.Stage1.shipper : null,
+      commodity: job.Stage1 ? job.Stage1.commodity : null,
+      notification_email: job.notification_email,
     };
   }
-
   async getUserDetails(userId) {
     const user = await User.findByPk(userId, {
-      attributes: ['id', 'username', 'email', 'role']
+      attributes: ["id", "username", "role"],
     });
 
     if (!user) {
@@ -341,15 +354,15 @@ class NotificationService {
     return {
       id: user.id,
       username: user.username,
-      email: user.email,
-      role: user.role
+      role: user.role,
     };
   }
 
+  // services/notificationService.js - Update getNotificationEmail method
   async getNotificationEmail(jobId) {
     // First try to get job-specific notification email
     const job = await PipelineJob.findByPk(jobId, {
-      attributes: ['notification_email']
+      attributes: ["notification_email"],
     });
 
     if (job && job.notification_email) {
@@ -361,47 +374,38 @@ class NotificationService {
       return process.env.ADMIN_EMAIL;
     }
 
-    // Fallback: get first admin user's email
-    const adminUser = await User.findOne({
-      where: { is_admin: true },
-      attributes: ['email']
-    });
-
-    if (adminUser && adminUser.email) {
-      return adminUser.email;
-    }
-
-    // Final fallback
-    return 'admin@maydiv.com';
+    // Fallback: use the job notification email field or default
+    // Since users table doesn't have email, we can't query user emails
+    return "admin@maydiv.com"; // Default fallback
   }
 
   getNextStage(currentStage) {
     switch (currentStage) {
-      case 'stage1':
-        return 'Stage 2 - Customs & Documentation';
-      case 'stage2':
-        return 'Stage 3 - Clearance & Logistics';
-      case 'stage3':
-        return 'Stage 4 - Billing & Completion';
-      case 'stage4':
-        return 'Completed';
+      case "stage1":
+        return "Stage 2 - Customs & Documentation";
+      case "stage2":
+        return "Stage 3 - Clearance & Logistics";
+      case "stage3":
+        return "Stage 4 - Billing & Completion";
+      case "stage4":
+        return "Completed";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   }
 
   getStageName(stage) {
     switch (stage) {
-      case 'stage1':
-        return 'Stage 1 - Initial Setup';
-      case 'stage2':
-        return 'Stage 2 - Customs & Documentation';
-      case 'stage3':
-        return 'Stage 3 - Clearance & Logistics';
-      case 'stage4':
-        return 'Stage 4 - Billing & Completion';
-      case 'completed':
-        return 'Completed';
+      case "stage1":
+        return "Stage 1 - Initial Setup";
+      case "stage2":
+        return "Stage 2 - Customs & Documentation";
+      case "stage3":
+        return "Stage 3 - Clearance & Logistics";
+      case "stage4":
+        return "Stage 4 - Billing & Completion";
+      case "completed":
+        return "Completed";
       default:
         return stage;
     }

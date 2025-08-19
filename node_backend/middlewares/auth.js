@@ -33,5 +33,21 @@ const requireRole = (roles) => {
     next();
   };
 };
-
-module.exports = { requireAuth, requireAdmin, requireRole };
+const attachment = (req, res, next) => {
+  console.log('Auth middleware - Session:', req.session);
+  
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  // Attach user info to request for easier access
+  req.user = {
+    id: req.session.userId,
+    username: req.session.username,
+    isAdmin: req.session.isAdmin,
+    role: req.session.role
+  };
+  
+  next();
+};
+module.exports = { requireAuth, requireAdmin, requireRole , attachment };

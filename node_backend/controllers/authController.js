@@ -1,61 +1,71 @@
-const User = require('../models/User');
+// controllers/authController.js - Fix the User import
+const { User } = require("../models"); // Import from models index
 
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
+
+    // Add validation
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Username and password are required",
+        });
+    }
+
     const user = await User.findOne({ where: { username } });
-    
-    if (!user || user.password_hash !== password) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
+    }
+
+    // For now, using plain text comparison. In production, use bcrypt!
+    if (user.password_hash !== password) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     req.session.userId = user.id;
     req.session.isAdmin = user.is_admin;
     req.session.username = user.username;
+    req.session.role = user.role;
 
     res.json({
       success: true,
+      username: user.username,
       is_admin: user.is_admin,
       role: user.role,
-      username: user.username
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error("Login error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 exports.logout = (req, res) => {
-  req.session.destroy(err => {
+  req.session.destroy((err) => {
     if (err) {
-      console.error('Logout error:', err);
-      return res.status(500).json({ success: false, message: 'Logout failed' });
+      return res.status(500).json({ success: false, message: "Logout failed" });
     }
-    res.clearCookie('connect.sid');
-    res.json({ success: true });
+    res.json({ success: true, message: "Logged out successfully" });
   });
 };
 
-exports.checkSession = async (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ authenticated: false });
-  }
-
-  try {
-    const user = await User.findByPk(req.session.userId);
-    if (!user) {
-      return res.status(404).json({ authenticated: false });
-    }
-
+exports.checkSession = (req, res) => {
+  if (req.session.userId) {
     res.json({
       authenticated: true,
-      user_id: user.id,
-      username: user.username,
-      is_admin: user.is_admin,
-      role: user.role
+      user_id: req.session.userId,
+      username: req.session.username,
+      is_admin: req.session.isAdmin,
+      role: req.session.role,
     });
-  } catch (error) {
-    console.error('Session check error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+  } else {
+    res.json({ authenticated: false });
   }
 };
