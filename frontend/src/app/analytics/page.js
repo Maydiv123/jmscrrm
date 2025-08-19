@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState , useCallback} from "react";
 import Sidebar from "../components/Sidebar";
 
 export default function AnalyticsPage() {
@@ -19,11 +19,7 @@ export default function AnalyticsPage() {
     topPerformingUsers: []
   });
 
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, []);
-
-  async function fetchAnalyticsData() {
+  const fetchAnalyticsData = useCallback(async () => {
     try {
       const [jobsRes, usersRes] = await Promise.all([
         fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/jobs", { credentials: "include" }),
@@ -50,7 +46,11 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []); // Empty dependency array means this never changes
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [fetchAnalyticsData]); // Now stable because of useCallback
 
   function calculateAnalytics(jobs, users) {
     const totalJobs = jobs.length;

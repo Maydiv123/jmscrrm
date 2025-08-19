@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function FileUpload({ jobId, stage, onFileUploaded, userRole, isAdmin, isSubadmin }) {
   const [files, setFiles] = useState([]);
@@ -41,9 +41,9 @@ export default function FileUpload({ jobId, stage, onFileUploaded, userRole, isA
     
     // Load existing uploaded files for this stage
     loadUploadedFiles();
-  }, [userRole, isAdmin, isSubadmin, stage, jobId]);
+  }, [userRole, isAdmin, isSubadmin, stage, jobId,loadUploadedFiles]);
 
-  const loadUploadedFiles = async () => {
+  const loadUploadedFiles = useCallback(async () => {
     try {
       console.log(`Loading files for job ${jobId}, stage ${stage}`);
       const response = await fetch(
@@ -66,7 +66,7 @@ export default function FileUpload({ jobId, stage, onFileUploaded, userRole, isA
       console.error(`Error loading files for ${stage}:`, error);
       setUploadedFiles([]);
     }
-  };
+  }, [  jobId, stage ]);
 
   const handleFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -256,7 +256,7 @@ export default function FileUpload({ jobId, stage, onFileUploaded, userRole, isA
       ) : (
         <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
           <p className="text-sm text-gray-600 text-center">
-            You don't have permission to upload files to this stage.
+            You don&apos;t have permission to upload files to this stage.
           </p>
         </div>
       )}

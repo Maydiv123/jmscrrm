@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
 
@@ -15,27 +15,27 @@ export default function AdminDashboard() {
     totalUsers: 0,
     stageDistribution: {},
     monthlyJobs: [],
-    recentActivity: []
+    recentActivity: [],
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  async function fetchData() {
+ const fetchData = useCallback(async () => {
     try {
       const [usersRes, pipelineRes] = await Promise.all([
-        fetch(process.env.NEXT_PUBLIC_API_URL + "/api/users", { credentials: "include" }),
-        fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/jobs", { credentials: "include" })
+        fetch(process.env.NEXT_PUBLIC_API_URL + "/api/users", {
+          credentials: "include",
+        }),
+        fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/jobs", {
+          credentials: "include",
+        }),
       ]);
-      
+
       if (usersRes.status === 403 || pipelineRes.status === 403) {
         window.location.href = "/login";
         return;
       }
-      
+
       if (!usersRes.ok) throw new Error("Failed to fetch data");
-      
+
       const usersData = await usersRes.json();
       const usersArray = Array.isArray(usersData) ? usersData : [];
       setUsers(usersArray);
@@ -44,8 +44,6 @@ export default function AdminDashboard() {
         const pipelineData = await pipelineRes.json();
         const jobsArray = Array.isArray(pipelineData) ? pipelineData : [];
         setPipelineJobs(jobsArray);
-        
-        // Calculate analytics
         calculateAnalytics(jobsArray, usersArray);
       }
     } catch (err) {
@@ -54,12 +52,19 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []); // Empty dependency array means this never changes
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]); // Run once on mount
   function calculateAnalytics(jobs, users) {
     const totalJobs = jobs.length;
-    const completedJobs = jobs.filter(job => job.current_stage === 'completed').length;
-    const activeJobs = jobs.filter(job => job.current_stage !== 'completed').length;
+    const completedJobs = jobs.filter(
+      (job) => job.current_stage === "completed"
+    ).length;
+    const activeJobs = jobs.filter(
+      (job) => job.current_stage !== "completed"
+    ).length;
     const totalUsers = users.length;
 
     // Stage distribution
@@ -73,10 +78,13 @@ export default function AdminDashboard() {
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
-      const month = date.toLocaleString('default', { month: 'short' });
-      const count = jobs.filter(job => {
+      const month = date.toLocaleString("default", { month: "short" });
+      const count = jobs.filter((job) => {
         const jobDate = new Date(job.created_at);
-        return jobDate.getMonth() === date.getMonth() && jobDate.getFullYear() === date.getFullYear();
+        return (
+          jobDate.getMonth() === date.getMonth() &&
+          jobDate.getFullYear() === date.getFullYear()
+        );
       }).length;
       monthlyJobs.push({ month, count });
     }
@@ -93,40 +101,58 @@ export default function AdminDashboard() {
       totalUsers,
       stageDistribution,
       monthlyJobs,
-      recentActivity
+      recentActivity,
     });
   }
 
   const getStageColor = (stage) => {
     switch (stage) {
-      case 'stage1': return 'bg-blue-100 text-blue-800';
-      case 'stage2': return 'bg-yellow-100 text-yellow-800';
-      case 'stage3': return 'bg-purple-100 text-purple-800';
-      case 'stage4': return 'bg-orange-100 text-orange-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "stage1":
+        return "bg-blue-100 text-blue-800";
+      case "stage2":
+        return "bg-yellow-100 text-yellow-800";
+      case "stage3":
+        return "bg-purple-100 text-purple-800";
+      case "stage4":
+        return "bg-orange-100 text-orange-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStageName = (stage) => {
     switch (stage) {
-      case 'stage1': return 'Initial Setup';
-      case 'stage2': return 'Customs & Documentation';
-      case 'stage3': return 'Clearance & Logistics';
-      case 'stage4': return 'Billing & Completion';
-      case 'completed': return 'Completed';
-      default: return stage;
+      case "stage1":
+        return "Initial Setup";
+      case "stage2":
+        return "Customs & Documentation";
+      case "stage3":
+        return "Clearance & Logistics";
+      case "stage4":
+        return "Billing & Completion";
+      case "completed":
+        return "Completed";
+      default:
+        return stage;
     }
   };
 
   const getRoleName = (role) => {
     switch (role) {
-      case 'admin': return 'Administrator';
-      case 'stage1_employee': return 'Stage 1 Employee';
-      case 'stage2_employee': return 'Stage 2 Employee';
-      case 'stage3_employee': return 'Stage 3 Employee';
-      case 'customer': return 'Customer';
-      default: return role;
+      case "admin":
+        return "Administrator";
+      case "stage1_employee":
+        return "Stage 1 Employee";
+      case "stage2_employee":
+        return "Stage 2 Employee";
+      case "stage3_employee":
+        return "Stage 3 Employee";
+      case "customer":
+        return "Customer";
+      default:
+        return role;
     }
   };
 
@@ -155,14 +181,16 @@ export default function AdminDashboard() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar userRole="admin" isAdmin={true} />
-      
+
       <div className="flex-1 ml-64">
         <div className="p-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Admin Dashboard
+            </h1>
             <p className="text-gray-600 mt-2">
-              Overview of your organization's pipeline and user activity
+              {" Overview of your organization's pipeline and user activity"}
             </p>
           </div>
 
@@ -174,8 +202,12 @@ export default function AdminDashboard() {
                   <span className="text-2xl">📊</span>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Jobs</p>
-                  <p className="text-2xl font-bold text-gray-900">{analytics.totalJobs}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Jobs
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {analytics.totalJobs}
+                  </p>
                 </div>
               </div>
             </div>
@@ -187,7 +219,9 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-gray-900">{analytics.completedJobs}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {analytics.completedJobs}
+                  </p>
                 </div>
               </div>
             </div>
@@ -199,7 +233,9 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-gray-900">{analytics.activeJobs}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {analytics.activeJobs}
+                  </p>
                 </div>
               </div>
             </div>
@@ -210,8 +246,12 @@ export default function AdminDashboard() {
                   <span className="text-2xl">👥</span>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Users</p>
-                  <p className="text-2xl font-bold text-gray-900">{analytics.totalUsers}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Users
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {analytics.totalUsers}
+                  </p>
                 </div>
               </div>
             </div>
@@ -221,41 +261,68 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* Stage Distribution */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Stage Distribution</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Stage Distribution
+              </h2>
               <div className="space-y-3">
-                {Object.entries(analytics.stageDistribution).map(([stage, count]) => (
-                  <div key={stage} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStageColor(stage)}`}>
-                        {getStageName(stage)}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${(count / analytics.totalJobs) * 100}%` }}
-                        ></div>
+                {Object.entries(analytics.stageDistribution).map(
+                  ([stage, count]) => (
+                    <div
+                      key={stage}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStageColor(
+                            stage
+                          )}`}
+                        >
+                          {getStageName(stage)}
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{count}</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{
+                              width: `${(count / analytics.totalJobs) * 100}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {count}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </div>
 
             {/* Monthly Jobs Chart */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Jobs</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Monthly Jobs
+              </h2>
               <div className="flex items-end justify-between h-32">
                 {analytics.monthlyJobs.map((item, index) => (
                   <div key={index} className="flex flex-col items-center">
-                    <div 
+                    <div
                       className="bg-blue-600 rounded-t w-8 mb-2"
-                      style={{ height: `${(item.count / Math.max(...analytics.monthlyJobs.map(m => m.count))) * 80}px` }}
+                      style={{
+                        height: `${
+                          (item.count /
+                            Math.max(
+                              ...analytics.monthlyJobs.map((m) => m.count)
+                            )) *
+                          80
+                        }px`,
+                      }}
                     ></div>
                     <span className="text-xs text-gray-600">{item.month}</span>
-                    <span className="text-xs font-medium text-gray-900">{item.count}</span>
+                    <span className="text-xs font-medium text-gray-900">
+                      {item.count}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -264,7 +331,9 @@ export default function AdminDashboard() {
 
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Quick Actions
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Link
                 href="/pipeline"
@@ -317,7 +386,9 @@ export default function AdminDashboard() {
             {/* Recent Activity */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Recent Activity
+                </h2>
                 <Link
                   href="/pipeline"
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -340,16 +411,24 @@ export default function AdminDashboard() {
                     >
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <span className="text-blue-600 font-semibold text-sm">J</span>
+                          <span className="text-blue-600 font-semibold text-sm">
+                            J
+                          </span>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{job.job_no}</p>
+                          <p className="font-medium text-gray-900">
+                            {job.job_no}
+                          </p>
                           <p className="text-sm text-gray-600">
                             {new Date(job.created_at).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStageColor(job.current_stage)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStageColor(
+                          job.current_stage
+                        )}`}
+                      >
                         {getStageName(job.current_stage)}
                       </span>
                     </div>
@@ -361,7 +440,9 @@ export default function AdminDashboard() {
             {/* Users Overview */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Team Members</h2>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Team Members
+                </h2>
                 <Link
                   href="/users"
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -389,14 +470,22 @@ export default function AdminDashboard() {
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{user.username}</p>
-                          <p className="text-sm text-gray-600">{getRoleName(user.role)}</p>
+                          <p className="font-medium text-gray-900">
+                            {user.username}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {getRoleName(user.role)}
+                          </p>
                         </div>
                       </div>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.is_admin ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {user.is_admin ? 'Admin' : 'User'}
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.is_admin
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {user.is_admin ? "Admin" : "User"}
                       </span>
                     </div>
                   ))}
@@ -408,4 +497,4 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-} 
+}

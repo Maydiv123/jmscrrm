@@ -724,8 +724,8 @@ export default function PipelinePage() {
                       onChange={handleInputChange}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
                     >
-                      <option value="20">20'</option>
-                      <option value="40">40'</option>
+                      <option value="20">{"20'"}</option>
+                      <option value="40">{"40'"}</option>
                       <option value="LCL">LCL</option>
                     </select>
                   </div>
