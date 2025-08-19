@@ -68,7 +68,7 @@ export default function Sidebar({ userRole, isAdmin }) {
 
   const handleLogout = async () => {
     try {
-      await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/logout", {
+      await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
