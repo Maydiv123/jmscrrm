@@ -1,12 +1,14 @@
-const userService = require('../services/userService');
+const User = require('../models/User');
 
-exports.getUsers = async (req, res) => {
+exports.getAllUsers = async (req, res) => {
   try {
-    if (!req.session.isAdmin && !(await userService.isAdminOrSubadmin(req.session.userId))) {
+    if (!req.session.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    const users = await userService.getAllUsers();
+    const users = await User.findAll({
+      attributes: ['id', 'username', 'designation', 'is_admin', 'role']
+    });
     res.json(users);
   } catch (error) {
     console.error('Get users error:', error);
@@ -16,17 +18,17 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    if (!req.session.isAdmin && !(await userService.isAdminOrSubadmin(req.session.userId))) {
+    if (!req.session.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
     const { username, password, designation, is_admin, role } = req.body;
-    const user = await userService.createUser({
+    const user = await User.create({
       username,
-      password,
+      password_hash: password, // In production, hash this password
       designation,
-      is_admin,
-      role
+      is_admin: is_admin || false,
+      role: role || 'stage1_employee'
     });
 
     res.json({ success: true, user });

@@ -1,12 +1,11 @@
 const taskService = require('../services/taskService');
 const userService = require('../services/userService');
 
-exports.getTasks = async (req, res) => {
+exports.getAllTasks  = async (req, res) => {
   try {
-    if (!req.session.isAdmin && !(await userService.isAdminOrSubadmin(req.session.userId))) {
+if (!req.session.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
-
     const tasks = await taskService.getAllTasks();
     res.json(tasks);
   } catch (error) {
