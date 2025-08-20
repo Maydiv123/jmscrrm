@@ -154,7 +154,7 @@ export default function Stage2Page() {
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/jobs/${selectedJob.id}/stage2`, {
-        method: "PUT",
+        method: "post",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(formData)

@@ -17,11 +17,7 @@ export default function SubadminDashboard() {
     monthlyJobs: [],
     recentActivity: [],
   });
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  const fetchData = useCallback(async () => {
+ const fetchData = useCallback(async () => {
     try {
       const [usersRes, pipelineRes] = await Promise.all([
         fetch(process.env.NEXT_PUBLIC_API_URL + "/api/users", {
@@ -59,6 +55,10 @@ export default function SubadminDashboard() {
     }
   },[]);
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+ 
   function calculateAnalytics(jobs, users) {
     const totalJobs = jobs.length;
     const completedJobs = jobs.filter(
