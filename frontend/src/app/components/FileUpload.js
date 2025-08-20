@@ -9,6 +9,31 @@ export default function FileUpload({ jobId, stage, onFileUploaded, userRole, isA
   const [canUpload, setCanUpload] = useState(false);
   const fileInputRef = useRef(null);
 
+  const loadUploadedFiles = useCallback(async () => {
+    try {
+      console.log(`Loading files for job ${jobId}, stage ${stage}`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/files?job_id=${jobId}&stage=${stage}`,
+        { credentials: 'include' }
+      );
+      
+      console.log(`Response status: ${response.status}`);
+      
+      if (response.ok) {
+        const files = await response.json();
+        console.log(`Files received:`, files);
+        // Ensure files is always an array
+        setUploadedFiles(Array.isArray(files) ? files : []);
+      } else {
+        console.log(`Error response: ${response.status} ${response.statusText}`);
+        setUploadedFiles([]);
+      }
+    } catch (error) {
+      console.error(`Error loading files for ${stage}:`, error);
+      setUploadedFiles([]);
+    }
+  }, [  jobId, stage ]);
+
   useEffect(() => {
     // Check if user can upload to this stage
     const checkUploadPermission = () => {
@@ -42,31 +67,6 @@ export default function FileUpload({ jobId, stage, onFileUploaded, userRole, isA
     // Load existing uploaded files for this stage
     loadUploadedFiles();
   }, [userRole, isAdmin, isSubadmin, stage, jobId,loadUploadedFiles]);
-
-  const loadUploadedFiles = useCallback(async () => {
-    try {
-      console.log(`Loading files for job ${jobId}, stage ${stage}`);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/files?job_id=${jobId}&stage=${stage}`,
-        { credentials: 'include' }
-      );
-      
-      console.log(`Response status: ${response.status}`);
-      
-      if (response.ok) {
-        const files = await response.json();
-        console.log(`Files received:`, files);
-        // Ensure files is always an array
-        setUploadedFiles(Array.isArray(files) ? files : []);
-      } else {
-        console.log(`Error response: ${response.status} ${response.statusText}`);
-        setUploadedFiles([]);
-      }
-    } catch (error) {
-      console.error(`Error loading files for ${stage}:`, error);
-      setUploadedFiles([]);
-    }
-  }, [  jobId, stage ]);
 
   const handleFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -137,7 +137,7 @@ export default function FileUpload({ jobId, stage, onFileUploaded, userRole, isA
   const handleDownload = async (fileId, fileName) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/files/download?id=${fileId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/files/download/${fileId}`,
         { credentials: 'include' }
       );
 
@@ -164,7 +164,7 @@ export default function FileUpload({ jobId, stage, onFileUploaded, userRole, isA
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/files/delete?id=${fileId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/files/${fileId}`,
         {
           method: 'DELETE',
           credentials: 'include',

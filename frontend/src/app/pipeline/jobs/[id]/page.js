@@ -15,16 +15,44 @@ export default function JobDetailsPage() {
   const [isStageDetailsModalOpen, setIsStageDetailsModalOpen] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
 
-  useEffect(() => {
-    // Get user info from localStorage
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      const user = JSON.parse(userData);
-      setUserRole(user.role || "stage1_employee");
-      setIsAdmin(user.is_admin || false);
+  // Add this helper above fetchJobDetails
+  const normalizeJob = (raw) => {
+    if (!raw || typeof raw !== "object") return raw;
+
+    // Prefer existing camelCase if present; otherwise map from PascalCase
+    const stage1 = raw.stage1 ?? raw.Stage1 ?? null;
+    const stage2 = raw.stage2 ?? raw.Stage2 ?? null;
+    const stage3Base = raw.stage3 ?? raw.Stage3 ?? null;
+    const stage4 = raw.stage4 ?? raw.Stage4 ?? null;
+
+    // Merge Stage3Containers into stage3.containers
+    const stage3Containers = raw.Stage3Containers ?? [];
+    const stage3 =
+      stage3Base || stage3Containers.length ? { ...(stage3Base || {}) } : null;
+
+    if (stage3) {
+      const existing = Array.isArray(stage3.containers)
+        ? stage3.containers
+        : [];
+      const mapped = stage3Containers.map((c) => ({
+        container_no: c.container_no ?? null,
+        size: c.size ?? null,
+        vehicle_no: c.vehicle_no ?? null,
+        date_of_offloading: c.date_of_offloading ?? null,
+        empty_return_date: c.empty_return_date ?? null,
+      }));
+      stage3.containers = [...existing, ...mapped];
     }
-    fetchJobDetails();
-  }, [fetchJobDetails]);
+
+    return {
+      ...raw,
+      stage1,
+      stage2,
+      stage3,
+      stage4,
+    };
+  };
+
   const fetchJobDetails = useCallback(async () => {
     try {
       const res = await fetch(
@@ -41,11 +69,13 @@ export default function JobDetailsPage() {
 
       if (res.ok) {
         const data = await res.json();
-        console.log("Job details received:", data);
-        console.log("Stage1 data:", data.stage1);
-        console.log("Stage2 data:", data.stage2);
-        console.log("Current stage:", data.current_stage);
-        setJob(data);
+        const payload = Array.isArray(data)
+          ? data.find((j) => String(j.id) === String(params.id)) ?? data[0]
+          : data;
+
+        const normalized = normalizeJob(payload);
+        console.log("Job details received:", normalized);
+        setJob(normalized);
       } else {
         const errorText = await res.text();
         console.error("Error response:", errorText);
@@ -58,8 +88,18 @@ export default function JobDetailsPage() {
     } finally {
       setLoading(false);
     }
-  });
+  }, [params.id]); // Add params.id as dependency
 
+  useEffect(() => {
+    // Get user info from localStorage
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      const user = JSON.parse(userData);
+      setUserRole(user.role || "stage1_employee");
+      setIsAdmin(user.is_admin || false);
+    }
+    fetchJobDetails();
+  }, [fetchJobDetails]);
   const handleFileUploaded = (stage) => {
     // File upload handled by FileUpload component
     console.log(`Files uploaded to ${stage}`);
