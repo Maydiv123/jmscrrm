@@ -1,3 +1,4 @@
+// models/Stage2Data.js - Verify all fields are defined
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
@@ -12,7 +13,7 @@ module.exports = (sequelize) => {
       allowNull: false
     },
     hsn_code: DataTypes.STRING,
-    filing_requirement: DataTypes.STRING,
+    filing_requirement: DataTypes.TEXT,
     checklist_sent_date: DataTypes.DATE,
     approval_date: DataTypes.DATE,
     bill_of_entry_no: DataTypes.STRING,

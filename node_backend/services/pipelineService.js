@@ -241,28 +241,43 @@ class PipelineService {
   }
 
   // Update stage2 data
+  // services/pipelineService.js - Rewrite updateStage2Data method
   async updateStage2Data(jobId, stage2Data, userId) {
     const transaction = await PipelineJob.sequelize.transaction();
 
     try {
-      // Find or create stage2 data
-      const [stage2, created] = await Stage2Data.findOrCreate({
+      console.log("Updating Stage2 data for job:", jobId);
+      console.log("Stage2 data payload:", stage2Data);
+
+      // First, try to find existing stage2 data
+      let stage2 = await Stage2Data.findOne({
         where: { job_id: jobId },
-        defaults: {
-          job_id: jobId,
-          ...stage2Data,
-        },
         transaction,
       });
 
-      if (!created) {
+      if (stage2) {
+        // Update existing record
+        console.log("Updating existing Stage2 data");
         await stage2.update(stage2Data, { transaction });
+      } else {
+        // Create new record
+        console.log("Creating new Stage2 data");
+        stage2 = await Stage2Data.create(
+          {
+            job_id: jobId,
+            ...stage2Data,
+          },
+          { transaction }
+        );
       }
 
       // Update job stage if needed
       const job = await PipelineJob.findByPk(jobId, { transaction });
+      console.log("Current job stage:", job.current_stage);
+
       if (job.current_stage === "stage1") {
         await job.update({ current_stage: "stage2" }, { transaction });
+        console.log("Updated job stage to stage2");
       }
 
       // Add job update
@@ -277,10 +292,25 @@ class PipelineService {
         { transaction }
       );
 
+      // Commit the transaction
       await transaction.commit();
+      console.log("Transaction committed successfully");
+
+      // Verify the data was saved
+      const savedStage2 = await Stage2Data.findOne({
+        where: { job_id: jobId },
+      });
+      console.log(
+        "Saved Stage2 data:",
+        savedStage2 ? savedStage2.toJSON() : "Not found"
+      );
+
+      // Return the complete job with all data
       return await this.getJobById(jobId);
     } catch (error) {
+      // Rollback transaction on error
       await transaction.rollback();
+      console.error("Error in updateStage2Data:", error);
       throw new Error(`Failed to update stage 2 data: ${error.message}`);
     }
   }

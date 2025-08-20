@@ -5,7 +5,8 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const { sequelize } = require('./models');
-
+const fs = require('fs');
+const path = require('path');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -73,7 +74,11 @@ app.use((req, res, next) => {
   console.log('Session data:', req.session);
   next();
 });
-
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Created uploads directory:', uploadsDir);
+}
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
