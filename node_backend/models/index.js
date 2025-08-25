@@ -3,11 +3,11 @@ const { Sequelize } = require('sequelize');
 const path = require('path');
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS,
+  process.env.DB_NAME || 'jms_db',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASS || '',
   {
-    host: process.env.DB_HOST,
+    host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
@@ -47,7 +47,7 @@ const Task = TaskModel(sequelize);
 const TaskAssignment = TaskAssignmentModel(sequelize);
 const TaskUpdate = TaskUpdateModel(sequelize);
 
-// Define associations - CORRECTED based on Golang structure
+// Define model associations
 PipelineJob.hasOne(Stage1Data, { foreignKey: 'job_id', as: 'Stage1' });
 Stage1Data.belongsTo(PipelineJob, { foreignKey: 'job_id' });
 
@@ -57,7 +57,7 @@ Stage2Data.belongsTo(PipelineJob, { foreignKey: 'job_id' });
 PipelineJob.hasOne(Stage3Data, { foreignKey: 'job_id', as: 'Stage3' });
 Stage3Data.belongsTo(PipelineJob, { foreignKey: 'job_id' });
 
-// CORRECTION: Stage3Container is directly associated with PipelineJob, not Stage3Data
+// Stage3Container is directly associated with PipelineJob
 PipelineJob.hasMany(Stage3Container, { foreignKey: 'job_id', as: 'Stage3Containers' });
 Stage3Container.belongsTo(PipelineJob, { foreignKey: 'job_id' });
 
@@ -107,6 +107,13 @@ async function syncDatabase() {
   try {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
+    
+    // Call associations for all models
+    Object.values(module.exports).forEach(model => {
+      if (model.associate) {
+        model.associate(module.exports);
+      }
+    });
     
     // Sync all models
     await sequelize.sync({ force: false });
