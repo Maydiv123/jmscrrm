@@ -14,6 +14,7 @@ class PipelineService {
   // Get all jobs with related data
   async getAllJobs() {
     try {
+      console.log("getAllJobs called, finding all pipeline jobs...");
       const jobs = await PipelineJob.findAll({
         include: [
           {
@@ -78,9 +79,34 @@ class PipelineService {
         order: [["created_at", "DESC"]],
       });
 
+      console.log(`Found ${jobs.length} jobs successfully`);
       return jobs;
     } catch (error) {
+      console.error("Error in getAllJobs service:", error);
       throw new Error(`Failed to fetch jobs: ${error.message}`);
+    }
+  }
+
+  // Get stage history for a job (last 2 stages)
+  async getJobStageHistory(jobId) {
+    try {
+      const stageHistory = await JobUpdate.findAll({
+        where: { job_id: jobId },
+        order: [['created_at', 'DESC']],
+        limit: 2,
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['username', 'role']
+          }
+        ]
+      });
+      
+      return stageHistory;
+    } catch (error) {
+      console.error("Error getting stage history:", error);
+      throw new Error(`Failed to get stage history: ${error.message}`);
     }
   }
 
@@ -142,10 +168,11 @@ class PipelineService {
               {
                 model: User,
                 as: "User",
-                attributes: ["username"],
+                attributes: ["username", "role"],
               },
             ],
             order: [["created_at", "DESC"]],
+            limit: 2,
           },
         ],
       });
@@ -274,20 +301,38 @@ class PipelineService {
       // Update job stage if needed
       const job = await PipelineJob.findByPk(jobId, { transaction });
       console.log("Current job stage:", job.current_stage);
+      
+      const previousStage = job.current_stage;
+      let newStage = "stage2";
 
       if (job.current_stage === "stage1") {
         await job.update({ current_stage: "stage2" }, { transaction });
         console.log("Updated job stage to stage2");
       }
 
-      // Add job update
+      // Get stage history (last 2 stages)
+      const stageHistory = await JobUpdate.findAll({
+        where: { job_id: jobId },
+        order: [['created_at', 'DESC']],
+        limit: 2,
+        transaction
+      });
+
+      // Add job update with previous stage info
       await JobUpdate.create(
         {
           job_id: jobId,
           user_id: userId,
           stage: "stage2",
-          update_type: "data_update",
-          message: "Stage 2 data updated",
+          update_type: "stage_change",
+          message: `Stage changed from ${previousStage} to ${newStage}`,
+          previous_stage: previousStage,
+          stage_history: stageHistory.map(update => ({
+            stage: update.stage,
+            message: update.message,
+            created_at: update.created_at,
+            user_id: update.user_id
+          }))
         },
         { transaction }
       );
@@ -356,18 +401,36 @@ class PipelineService {
 
       // Update job stage if needed
       const job = await PipelineJob.findByPk(jobId, { transaction });
+      const previousStage = job.current_stage;
+      let newStage = "stage3";
+      
       if (job.current_stage === "stage1" || job.current_stage === "stage2") {
         await job.update({ current_stage: "stage3" }, { transaction });
       }
 
-      // Add job update
+      // Get stage history (last 2 stages)
+      const stageHistory = await JobUpdate.findAll({
+        where: { job_id: jobId },
+        order: [['created_at', 'DESC']],
+        limit: 2,
+        transaction
+      });
+
+      // Add job update with previous stage info
       await JobUpdate.create(
         {
           job_id: jobId,
           user_id: userId,
           stage: "stage3",
-          update_type: "data_update",
-          message: "Stage 3 data updated",
+          update_type: "stage_change",
+          message: `Stage changed from ${previousStage} to ${newStage}`,
+          previous_stage: previousStage,
+          stage_history: stageHistory.map(update => ({
+            stage: update.stage,
+            message: update.message,
+            created_at: update.created_at,
+            user_id: update.user_id
+          }))
         },
         { transaction }
       );
@@ -401,6 +464,7 @@ class PipelineService {
 
       // Update job stage to stage4 or completed
       const job = await PipelineJob.findByPk(jobId, { transaction });
+      const previousStage = job.current_stage;
       let newStage = "stage4";
       if (stage4Data.acknowledge_date) {
         newStage = "completed";
@@ -408,7 +472,15 @@ class PipelineService {
 
       await job.update({ current_stage: newStage }, { transaction });
 
-      // Add job update
+      // Get stage history (last 2 stages)
+      const stageHistory = await JobUpdate.findAll({
+        where: { job_id: jobId },
+        order: [['created_at', 'DESC']],
+        limit: 2,
+        transaction
+      });
+
+      // Add job update with previous stage info
       const message =
         newStage === "completed" ? "Job completed" : "Stage 4 data updated";
       await JobUpdate.create(
@@ -416,8 +488,15 @@ class PipelineService {
           job_id: jobId,
           user_id: userId,
           stage: "stage4",
-          update_type: "data_update",
+          update_type: "stage_change",
           message: message,
+          previous_stage: previousStage,
+          stage_history: stageHistory.map(update => ({
+            stage: update.stage,
+            message: update.message,
+            created_at: update.created_at,
+            user_id: update.user_id
+          }))
         },
         { transaction }
       );
