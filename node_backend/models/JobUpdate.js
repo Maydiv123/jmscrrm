@@ -19,13 +19,21 @@ module.exports = (sequelize) => {
     update_type: DataTypes.STRING,
     message: DataTypes.STRING,
     old_value: DataTypes.STRING,
-    new_value: DataTypes.STRING
+    new_value: DataTypes.STRING,
+    previous_stage: DataTypes.STRING,
+    stage_history: DataTypes.JSON
   }, {
     tableName: 'job_updates',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
   });
+
+  // Define associations
+  JobUpdate.associate = (models) => {
+    JobUpdate.belongsTo(models.User, { foreignKey: 'user_id', as: 'User' });
+    JobUpdate.belongsTo(models.PipelineJob, { foreignKey: 'job_id' });
+  };
 
   return JobUpdate;
 };
