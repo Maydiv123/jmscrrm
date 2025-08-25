@@ -16,10 +16,13 @@ class PipelineController {
         return res.status(403).json({ error: "Access denied" });
       }
 
+      console.log("Calling pipelineService.getAllJobs()...");
       const jobs = await pipelineService.getAllJobs();
+      console.log("Jobs fetched successfully:", jobs.length);
       res.json(jobs);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error("Error in getAllJobs controller:", error);
+      res.status(500).json({ error: error.message, stack: error.stack });
     }
   }
 
@@ -96,9 +99,9 @@ class PipelineController {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      // Check if user is admin or subadmin
-      if (!req.user.isAdmin && req.user.role !== "subadmin") {
-        return res.status(403).json({ error: "Access denied" });
+      // Check if user is admin, subadmin, or stage1_employee
+      if (!req.user.isAdmin && req.user.role !== "subadmin" && req.user.role !== "stage1_employee") {
+        return res.status(403).json({ error: "Access denied. Only admin, subadmin, and stage1 employees can create pipelines." });
       }
 
       const job = await pipelineService.createJob(req.body, req.session.userId);
@@ -209,6 +212,22 @@ class PipelineController {
       res.status(500).json({ error: error.message });
     }
   }
+  // Get stage history for a job
+  async getJobStageHistory(req, res) {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const jobId = parseInt(req.params.id);
+      const stageHistory = await pipelineService.getJobStageHistory(jobId);
+
+      res.json(stageHistory);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   // File upload
   async uploadFile(req, res) {
       console.log("Request body:", req.body);
@@ -221,8 +240,15 @@ class PipelineController {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
+      // Check if user has access to this job
+      const jobId = parseInt(req.body.job_id);
+      const job = await pipelineService.getJobById(jobId);
+      if (!this.hasJobAccess(req, job)) {
+        return res.status(403).json({ error: "Access denied. You don't have permission to upload files for this job." });
+      }
+
       const fileData = {
-        job_id: parseInt(req.body.job_id),
+        job_id: jobId,
         stage: req.body.stage,
         uploaded_by: req.session.userId,
         file_name: req.file.filename,
