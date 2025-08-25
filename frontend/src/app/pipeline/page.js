@@ -7,6 +7,8 @@ export default function PipelinePage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
   const [formData, setFormData] = useState({
     job_no: '',
     job_date: '',
@@ -110,8 +112,133 @@ export default function PipelinePage() {
     }
   }
 
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = '';
+    
+    switch (name) {
+      case 'job_no':
+        if (!value.trim()) error = 'Job number is required';
+        else if (value.length < 3) error = 'Job number must be at least 3 characters';
+        break;
+      case 'job_date':
+        if (value && new Date(value) > new Date()) error = 'Job date cannot be in the future';
+        break;
+      case 'edi_job_no':
+        if (value && value.length < 3) error = 'EDI job number must be at least 3 characters';
+        break;
+      case 'edi_date':
+        if (value && new Date(value) > new Date()) error = 'EDI date cannot be in the future';
+        break;
+      case 'consignee':
+        if (value && value.length < 5) error = 'Consignee must be at least 5 characters';
+        break;
+      case 'shipper':
+        if (value && value.length < 5) error = 'Shipper must be at least 5 characters';
+        break;
+      case 'port_of_discharge':
+        if (value && value.length < 3) error = 'Port of discharge must be at least 3 characters';
+        break;
+      case 'port_of_loading':
+        if (value && value.length < 3) error = 'Port of loading must be at least 3 characters';
+        break;
+      case 'country_of_shipment':
+        if (value && value.length < 2) error = 'Country must be at least 2 characters';
+        break;
+      case 'hbl_no':
+        if (value && value.length < 3) error = 'HBL number must be at least 3 characters';
+        break;
+      case 'hbl_date':
+        if (value && new Date(value) > new Date()) error = 'HBL date cannot be in the future';
+        break;
+      case 'mbl_no':
+        if (value && value.length < 3) error = 'MBL number must be at least 3 characters';
+        break;
+      case 'mbl_date':
+        if (value && new Date(value) > new Date()) error = 'MBL date cannot be in future';
+        break;
+      case 'shipping_line':
+        if (value && value.length < 2) error = 'Shipping line must be at least 2 characters';
+        break;
+      case 'forwarder':
+        if (value && value.length < 2) error = 'Forwarder must be at least 2 characters';
+        break;
+      case 'weight':
+        if (value && (isNaN(value) || parseFloat(value) < 0)) error = 'Weight must be a positive number';
+        break;
+      case 'packages':
+        if (value && (isNaN(value) || parseInt(value) < 0)) error = 'Packages must be a positive number';
+        break;
+      case 'invoice_no':
+        if (value && value.length < 3) error = 'Invoice number must be at least 3 characters';
+        break;
+      case 'invoice_date':
+        if (value && new Date(value) > new Date()) error = 'Invoice date cannot be in future';
+        break;
+      case 'gateway_igm':
+        if (value && value.length < 3) error = 'Gateway IGM must be at least 3 characters';
+        break;
+      case 'gateway_igm_date':
+        if (value && new Date(value) > new Date()) error = 'Gateway IGM date cannot be in future';
+        break;
+      case 'local_igm':
+        if (value && value.length < 3) error = 'Local IGM must be at least 3 characters';
+        break;
+      case 'local_igm_date':
+        if (value && new Date(value) > new Date()) error = 'Local IGM date cannot be in future';
+        break;
+      case 'commodity':
+        if (value && value.length < 3) error = 'Commodity must be at least 3 characters';
+        break;
+      case 'eta':
+        if (value && new Date(value) < new Date()) error = 'ETA cannot be in the past';
+        break;
+      case 'current_status':
+        if (value && value.length < 3) error = 'Current status must be at least 3 characters';
+        break;
+      case 'container_no':
+        if (value && value.length < 3) error = 'Container number must be at least 3 characters';
+        break;
+      case 'date_of_arrival':
+        if (value && new Date(value) > new Date()) error = 'Date of arrival cannot be in future';
+        break;
+      case 'notification_email':
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Please enter a valid email address';
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Validate required fields
+    if (!formData.job_no.trim()) {
+      newErrors.job_no = 'Job number is required';
+    }
+    
+    // Validate all other fields
+    Object.keys(formData).forEach(field => {
+      if (formData[field] !== '' && formData[field] !== 0) {
+        const error = validateField(field, formData[field]);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
     
     // Fields that should be numbers
     const numberFields = ['weight', 'packages', 'assigned_to_stage2', 'assigned_to_stage3', 'customer_id'];
@@ -122,8 +249,113 @@ export default function PipelinePage() {
     }));
   };
 
+  // Helper function to render form field with error
+  const renderFormField = (name, label, type = 'text', required = false, placeholder = '', rows = null) => {
+    const isError = errors[name];
+    const inputClass = `w-full border rounded-md px-3 py-2 text-black ${
+      isError ? 'border-red-500' : 'border-gray-300'
+    }`;
+    
+    if (type === 'textarea') {
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {label} {required && <span className="text-red-500">*</span>}
+          </label>
+          <textarea
+            name={name}
+            value={formData[name]}
+            onChange={handleInputChange}
+            className={inputClass}
+            rows={rows || 3}
+            placeholder={placeholder}
+          />
+          {isError && (
+            <p className="text-red-500 text-xs mt-1">{isError}</p>
+          )}
+        </div>
+      );
+    }
+    
+    if (type === 'select') {
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {label} {required && <span className="text-red-500">*</span>}
+          </label>
+          <select
+            name={name}
+            value={formData[name]}
+            onChange={handleInputChange}
+            className={inputClass}
+          >
+            {name === 'container_size' ? (
+              <>
+                <option value="20">{"20'"}</option>
+                <option value="40">{"40'"}</option>
+                <option value="LCL">LCL</option>
+              </>
+            ) : name === 'assigned_to_stage2' ? (
+              <>
+                <option value={0}>Select Employee</option>
+                {stage2Employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
+                ))}
+              </>
+            ) : name === 'assigned_to_stage3' ? (
+              <>
+                <option value={0}>Select Employee</option>
+                {stage3Employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
+                ))}
+              </>
+            ) : name === 'customer_id' ? (
+              <>
+                <option value={0}>Select Customer</option>
+                {customers.map(customer => (
+                  <option key={customer.id} value={customer.id}>{customer.username}</option>
+                ))}
+              </>
+            ) : null}
+          </select>
+          {isError && (
+            <p className="text-red-500 text-xs mt-1">{isError}</p>
+          )}
+        </div>
+      );
+    }
+    
+    return (
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        <input
+          type={type}
+          name={name}
+          value={formData[name]}
+          onChange={handleInputChange}
+          className={inputClass}
+          placeholder={placeholder}
+          required={required}
+        />
+        {isError && (
+          <p className="text-red-500 text-xs mt-1">{isError}</p>
+        )}
+      </div>
+    );
+  };
+
   const handleCreateJob = async (e) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       console.log("Sending form data:", formData);
       
@@ -174,9 +406,11 @@ export default function PipelinePage() {
         body: jsonBody
       });
 
-      if (res.ok) {
-        setShowCreateModal(false);
-        setFormData({
+             if (res.ok) {
+         setShowCreateModal(false);
+         setErrors({});
+         setIsSubmitting(false);
+         setFormData({
           job_no: '', job_date: '', edi_job_no: '', edi_date: '', consignee: '', shipper: '',
           port_of_discharge: '', final_place_of_delivery: '', port_of_loading: '', country_of_shipment: '',
           hbl_no: '', hbl_date: '', mbl_no: '', mbl_date: '', shipping_line: '', forwarder: '',
@@ -190,10 +424,12 @@ export default function PipelinePage() {
         console.error("Backend error response:", errorData);
         alert("Error creating job: " + errorData);
       }
-    } catch (err) {
-      console.error("Error creating job:", err);
-      alert("Error creating job");
-    }
+         } catch (err) {
+       console.error("Error creating job:", err);
+       alert("Error creating job");
+     } finally {
+       setIsSubmitting(false);
+     }
   };
 
   const getStageColor = (stage) => {
@@ -218,6 +454,101 @@ export default function PipelinePage() {
     }
   };
 
+  const handleEditJob = (job) => {
+    setEditingJob(job);
+    setFormData({
+      job_no: job.job_no || '',
+      job_date: job.stage1?.job_date || '',
+      edi_job_no: job.stage1?.edi_job_no || '',
+      edi_date: job.stage1?.edi_date || '',
+      consignee: job.stage1?.consignee || '',
+      shipper: job.stage1?.shipper || '',
+      port_of_discharge: job.stage1?.port_of_discharge || '',
+      final_place_of_delivery: job.stage1?.final_place_of_delivery || '',
+      port_of_loading: job.stage1?.port_of_loading || '',
+      country_of_shipment: job.stage1?.country_of_shipment || '',
+      hbl_no: job.stage1?.hbl_no || '',
+      hbl_date: job.stage1?.hbl_date || '',
+      mbl_no: job.stage1?.mbl_no || '',
+      mbl_date: job.stage1?.mbl_date || '',
+      shipping_line: job.stage1?.shipping_line || '',
+      forwarder: job.stage1?.forwarder || '',
+      weight: job.stage1?.weight || 0,
+      packages: job.stage1?.packages || 0,
+      invoice_no: job.stage1?.invoice_no || '',
+      invoice_date: job.stage1?.invoice_date || '',
+      gateway_igm: job.stage1?.gateway_igm || '',
+      gateway_igm_date: job.stage1?.gateway_igm_date || '',
+      local_igm: job.stage1?.local_igm || '',
+      local_igm_date: job.stage1?.local_igm_date || '',
+      commodity: job.stage1?.commodity || '',
+      eta: job.stage1?.eta || '',
+      current_status: job.stage1?.current_status || '',
+      container_no: job.stage1?.container_no || '',
+      container_size: job.stage1?.container_size || '20',
+      date_of_arrival: job.stage1?.date_of_arrival || '',
+      assigned_to_stage2: job.assigned_to_stage2 || 0,
+      assigned_to_stage3: job.assigned_to_stage3 || 0,
+      customer_id: job.customer_id || 0,
+      notification_email: job.notification_email || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateJob = async (e) => {
+    e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const updateData = {
+        ...formData,
+        assigned_to_stage2: parseInt(formData.assigned_to_stage2) || 0,
+        assigned_to_stage3: parseInt(formData.assigned_to_stage3) || 0,
+        customer_id: parseInt(formData.customer_id) || 0,
+        weight: parseInt(formData.weight) || 0,
+        packages: parseInt(formData.packages) || 0
+      };
+
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + `/api/pipeline/jobs/${editingJob.id}`, {
+        method: 'PUT',
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(updateData)
+      });
+
+             if (res.ok) {
+         setShowEditModal(false);
+         setEditingJob(null);
+         setErrors({});
+         setIsSubmitting(false);
+         setFormData({
+          job_no: '', job_date: '', edi_job_no: '', edi_date: '', consignee: '', shipper: '',
+          port_of_discharge: '', final_place_of_delivery: '', port_of_loading: '', country_of_shipment: '',
+          hbl_no: '', hbl_date: '', mbl_no: '', mbl_date: '', shipping_line: '', forwarder: '',
+          weight: 0, packages: 0, invoice_no: '', invoice_date: '', gateway_igm: '', gateway_igm_date: '',
+          local_igm: '', local_igm_date: '', commodity: '', eta: '', current_status: '',
+          container_no: '', container_size: '20', date_of_arrival: '', assigned_to_stage2: 0, assigned_to_stage3: 0, customer_id: 0, notification_email: ''
+        });
+        fetchData();
+        alert('Job updated successfully!');
+      } else {
+        const errorData = await res.text();
+        alert("Error updating job: " + errorData);
+      }
+         } catch (err) {
+       console.error("Error updating job:", err);
+       alert("Error updating job");
+     } finally {
+       setIsSubmitting(false);
+     }
+  };
+
   const stage2Employees = users.filter(u => u.role === 'stage2_employee') || [];
   const stage3Employees = users.filter(u => u.role === 'stage3_employee') || [];
   const customers = users.filter(u => u.role === 'customer') || [];
@@ -225,6 +556,10 @@ export default function PipelinePage() {
   const [userRole, setUserRole] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSubadmin, setIsSubadmin] = useState(false);
+  
+  // Validation states
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Get user info from localStorage
@@ -269,7 +604,7 @@ export default function PipelinePage() {
                 }
               </p>
             </div>
-            {(isAdmin || isSubadmin) && (
+            {(isAdmin || isSubadmin || userRole === 'stage1_employee') && (
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -351,12 +686,23 @@ export default function PipelinePage() {
                       {new Date(job.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => window.location.href = `/pipeline/jobs/${job.id}`}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => window.location.href = `/pipeline/jobs/${job.id}`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View Details
+                        </button>
+                        {(isAdmin || isSubadmin) && (
+                          <button
+                            onClick={() => handleEditJob(job)}
+                            className="text-yellow-600 hover:text-yellow-900"
+                            title="Edit Job"
+                          >
+                            ✏️
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -373,15 +719,43 @@ export default function PipelinePage() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Create New Pipeline Job</h2>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ×
-                </button>
+                                 <button
+                   onClick={() => {
+                     setShowCreateModal(false);
+                     setErrors({});
+                     setIsSubmitting(false);
+                   }}
+                   className="text-gray-400 hover:text-gray-600"
+                 >
+                   ×
+                 </button>
               </div>
 
               <form onSubmit={handleCreateJob} className="space-y-6">
+                {/* Validation Summary */}
+                {Object.keys(errors).length > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">
+                          Please fix the following errors:
+                        </h3>
+                        <div className="mt-2 text-sm text-red-700">
+                          <ul className="list-disc pl-5 space-y-1">
+                            {Object.entries(errors).map(([field, error]) => (
+                              <li key={field}>{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -575,27 +949,28 @@ export default function PipelinePage() {
 
                 {/* Cargo Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Weight (KG)</label>
-                    <input
-                      type="number"
-                      name="weight"
-                      value={formData.weight}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      step="0.01"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Packages</label>
-                    <input
-                      type="number"
-                      name="packages"
-                      value={formData.packages}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                                     <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Weight (KG)</label>
+                     <input
+                       type="text"
+                       name="weight"
+                       value={formData.weight}
+                       onChange={handleInputChange}
+                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                       placeholder="Enter weight in KG"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Packages</label>
+                     <input
+                       type="text"
+                       name="packages"
+                       value={formData.packages}
+                       onChange={handleInputChange}
+                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                       placeholder="Enter number of packages"
+                     />
+                   </div>
                 </div>
 
                 {/* Invoice Details */}
@@ -685,7 +1060,7 @@ export default function PipelinePage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">ETA</label>
                     <input
-                      type="datetime-local"
+                      type="date"
                       name="eta"
                       value={formData.eta}
                       onChange={handleInputChange}
@@ -807,21 +1182,526 @@ export default function PipelinePage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-4 pt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Create Job
-                  </button>
+                                 <div className="flex justify-end gap-4 pt-6">
+                   <button
+                     type="button"
+                     onClick={() => setShowCreateModal(false)}
+                     className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                     disabled={isSubmitting}
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="submit"
+                     className={`px-4 py-2 text-white rounded-md transition-colors ${
+                       isSubmitting 
+                         ? 'bg-gray-400 cursor-not-allowed' 
+                         : 'bg-blue-600 hover:bg-blue-700'
+                     }`}
+                     disabled={isSubmitting}
+                   >
+                     {isSubmitting ? 'Creating...' : 'Create Job'}
+                   </button>
+                 </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Job Modal */}
+      {showEditModal && editingJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Edit Pipeline Job - {editingJob.job_no}</h2>
+                                 <button
+                   onClick={() => {
+                     setShowEditModal(false);
+                     setErrors({});
+                     setIsSubmitting(false);
+                   }}
+                   className="text-gray-400 hover:text-gray-600"
+                 >
+                   ×
+                 </button>
+              </div>
+
+                             <form onSubmit={handleUpdateJob} className="space-y-6">
+                 {/* Validation Summary */}
+                 {Object.keys(errors).length > 0 && (
+                   <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                     <div className="flex">
+                       <div className="flex-shrink-0">
+                         <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                         </svg>
+                       </div>
+                       <div className="ml-3">
+                         <h3 className="text-sm font-medium text-red-800">
+                           Please fix the following errors:
+                         </h3>
+                         <div className="mt-2 text-sm text-red-700">
+                           <ul className="list-disc pl-5 space-y-1">
+                             {Object.entries(errors).map(([field, error]) => (
+                               <li key={field}>{error}</li>
+                             ))}
+                           </ul>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 )}
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Job No. *</label>
+                    <input
+                      type="text"
+                      name="job_no"
+                      value={formData.job_no}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Job Date</label>
+                    <input
+                      type="date"
+                      name="job_date"
+                      value={formData.job_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
                 </div>
+
+                {/* EDI Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Job No.</label>
+                    <input
+                      type="text"
+                      name="edi_job_no"
+                      value={formData.edi_job_no}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Date</label>
+                    <input
+                      type="date"
+                      name="edi_date"
+                      value={formData.edi_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Parties */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Consignee</label>
+                    <textarea
+                      name="consignee"
+                      value={formData.consignee}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      rows="3"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Shipper</label>
+                    <textarea
+                      name="shipper"
+                      value={formData.shipper}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      rows="3"
+                    />
+                  </div>
+                </div>
+
+                {/* Ports */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Port of Discharge</label>
+                    <input
+                      type="text"
+                      name="port_of_discharge"
+                      value={formData.port_of_discharge}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Final Place of Delivery</label>
+                    <input
+                      type="text"
+                      name="final_place_of_delivery"
+                      value={formData.final_place_of_delivery}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Port of Loading</label>
+                    <input
+                      type="text"
+                      name="port_of_loading"
+                      value={formData.port_of_loading}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Country and Documents */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country of Shipment</label>
+                    <input
+                      type="text"
+                      name="country_of_shipment"
+                      value={formData.country_of_shipment}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">HBL No.</label>
+                    <input
+                      type="text"
+                      name="hbl_no"
+                      value={formData.hbl_no}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* HBL and MBL Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">HBL Date</label>
+                    <input
+                      type="date"
+                      name="hbl_date"
+                      value={formData.hbl_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">MBL No.</label>
+                    <input
+                      type="text"
+                      name="mbl_no"
+                      value={formData.mbl_no}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* MBL Date and Shipping Line */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">MBL Date</label>
+                    <input
+                      type="date"
+                      name="mbl_date"
+                      value={formData.mbl_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Line</label>
+                    <input
+                      type="text"
+                      name="shipping_line"
+                      value={formData.shipping_line}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Forwarder and Weight */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Forwarder</label>
+                    <input
+                      type="text"
+                      name="forwarder"
+                      value={formData.forwarder}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                                     <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                     <input
+                       type="text"
+                       name="weight"
+                       value={formData.weight}
+                       onChange={handleInputChange}
+                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                       placeholder="Enter weight in KG"
+                     />
+                   </div>
+                </div>
+
+                {/* Packages and Invoice */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Packages</label>
+                     <input
+                       type="text"
+                       name="packages"
+                       value={formData.packages}
+                       onChange={handleInputChange}
+                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                       placeholder="Enter number of packages"
+                     />
+                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice No.</label>
+                    <input
+                      type="text"
+                      name="invoice_no"
+                      value={formData.invoice_no}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Invoice Date and Gateway IGM */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date</label>
+                    <input
+                      type="date"
+                      name="invoice_date"
+                      value={formData.invoice_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM</label>
+                    <input
+                      type="text"
+                      name="gateway_igm"
+                      value={formData.gateway_igm}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Gateway IGM Date and Local IGM */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM Date</label>
+                    <input
+                      type="date"
+                      name="gateway_igm_date"
+                      value={formData.gateway_igm_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM</label>
+                    <input
+                      type="text"
+                      name="local_igm"
+                      value={formData.local_igm}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Local IGM Date and Commodity */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM Date</label>
+                    <input
+                      type="date"
+                      name="local_igm_date"
+                      value={formData.local_igm_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Commodity</label>
+                    <input
+                      type="text"
+                      name="commodity"
+                      value={formData.commodity}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* ETA and Current Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ETA</label>
+                    <input
+                      type="date"
+                      name="eta"
+                      value={formData.eta}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
+                    <input
+                      type="text"
+                      name="current_status"
+                      value={formData.current_status}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Container Details */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Container No.</label>
+                    <input
+                      type="text"
+                      name="container_no"
+                      value={formData.container_no}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
+                    <select
+                      name="container_size"
+                      value={formData.container_size}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
+                    >
+                      <option value="20">{"20'"}</option>
+                      <option value="40">{"40'"}</option>
+                      <option value="LCL">LCL</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
+                    <input
+                      type="date"
+                      name="date_of_arrival"
+                      value={formData.date_of_arrival}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Assignments */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Stage 2 Employee</label>
+                    <select
+                      name="assigned_to_stage2"
+                      value={formData.assigned_to_stage2}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    >
+                      <option value={0}>Select Employee</option>
+                      {stage2Employees.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Stage 3 Employee</label>
+                    <select
+                      name="assigned_to_stage3"
+                      value={formData.assigned_to_stage3}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    >
+                      <option value={0}>Select Employee</option>
+                      {stage3Employees.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign Customer</label>
+                    <select
+                      name="customer_id"
+                      value={formData.customer_id}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    >
+                      <option value={0}>Select Customer</option>
+                      {customers.map(customer => (
+                        <option key={customer.id} value={customer.id}>{customer.username}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Notification Email */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notification Email <span className="text-gray-500">(Optional - for stage completion alerts)</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="notification_email"
+                      value={formData.notification_email}
+                      onChange={handleInputChange}
+                      placeholder="Enter email address to receive notifications"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave empty to use default admin email. This email will receive notifications when stages are completed.
+                    </p>
+                  </div>
+                </div>
+
+                                 <div className="flex justify-end gap-4 pt-6">
+                   <button
+                     type="button"
+                     onClick={() => setShowEditModal(false)}
+                     className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                     disabled={isSubmitting}
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="submit"
+                     className={`px-4 py-2 text-white rounded-md transition-colors ${
+                       isSubmitting 
+                         ? 'bg-gray-400 cursor-not-allowed' 
+                         : 'bg-yellow-600 hover:bg-yellow-700'
+                     }`}
+                     disabled={isSubmitting}
+                   >
+                     {isSubmitting ? 'Updating...' : 'Update Job'}
+                   </button>
+                 </div>
               </form>
             </div>
           </div>
