@@ -43,20 +43,24 @@ class PipelineController {
         return res.json(jobs);
       }
 
-      // Get jobs based on user role
+      // For stage employees, show only jobs in their current stage
       let jobs;
       switch (req.user.role) {
         case "stage1_employee":
+          // Stage 1 employees see jobs they created (stage1)
           jobs = await pipelineService.getJobsByCreator(userId);
           break;
         case "stage2_employee":
-          jobs = await pipelineService.getJobsByStage2(userId);
+          // Stage 2 employees see only jobs currently in stage2
+          jobs = await pipelineService.getJobsByCurrentStage("stage2");
           break;
         case "stage3_employee":
-          jobs = await pipelineService.getJobsByStage3(userId);
+          // Stage 3 employees see only jobs currently in stage3
+          jobs = await pipelineService.getJobsByCurrentStage("stage3");
           break;
         case "customer":
-          jobs = await pipelineService.getJobsByCustomer(userId);
+          // Customers see only jobs currently in stage4
+          jobs = await pipelineService.getJobsByCurrentStage("stage4");
           break;
         default:
           return res.status(403).json({ error: "Invalid role" });
@@ -116,6 +120,27 @@ class PipelineController {
       if (error.message.includes("Duplicate")) {
         return res.status(409).json({ error: "Job number already exists" });
       }
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  // Update job
+  async updateJob(req, res) {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Check if user is admin, subadmin, or stage1_employee
+      if (!req.user.isAdmin && req.user.role !== "subadmin" && req.user.role !== "stage1_employee") {
+        return res.status(403).json({ error: "Access denied. Only admin, subadmin, and stage1 employees can update pipelines." });
+      }
+
+      const jobId = parseInt(req.params.id);
+      const job = await pipelineService.updateJob(jobId, req.body, req.session.userId);
+
+      res.json({ message: "Job updated successfully", job });
+    } catch (error) {
       res.status(500).json({ error: error.message });
     }
   }
@@ -392,16 +417,16 @@ class PipelineController {
       return true;
     }
 
-    // Check role-based access
+    // Check role-based access by current stage
     switch (req.user.role) {
-      case "stage2_employee":
-        return job.assigned_to_stage2 === userId;
-      case "stage3_employee":
-        return job.assigned_to_stage3 === userId;
-      case "customer":
-        return job.customer_id === userId;
       case "stage1_employee":
         return job.created_by === userId;
+      case "stage2_employee":
+        return job.current_stage === "stage2";
+      case "stage3_employee":
+        return job.current_stage === "stage3";
+      case "customer":
+        return job.current_stage === "stage4";
       default:
         return false;
     }
