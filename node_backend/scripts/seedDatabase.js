@@ -58,6 +58,7 @@ async function seedDatabase() {
         role: 'stage1_employee'
       },
       {
+        
         username: 'stage2_emp',
         password_hash: '123456',
         designation: 'Customs Officer',
@@ -95,9 +96,6 @@ async function seedDatabase() {
         current_stage: 'stage1',
         status: 'active',
         created_by: users[1].id, // stage1_emp
-        assigned_to_stage2: users[2].id, // stage2_emp
-        assigned_to_stage3: users[3].id, // stage3_emp
-        customer_id: users[4].id, // customer1
         notification_email: 'customer1@example.com'
       },
       {
@@ -105,7 +103,6 @@ async function seedDatabase() {
         current_stage: 'stage2',
         status: 'active',
         created_by: users[0].id, // admin
-        assigned_to_stage2: users[2].id, // stage2_emp
         notification_email: 'customer2@example.com'
       },
       {
@@ -113,8 +110,7 @@ async function seedDatabase() {
         current_stage: 'stage3',
         status: 'active',
         created_by: users[5].id, // subadmin
-        assigned_to_stage3: users[3].id, // stage3_emp
-        customer_id: users[4].id // customer1
+        notification_email: 'customer3@example.com'
       }
     ], { returning: true });
     console.log('Sample pipeline jobs created');
