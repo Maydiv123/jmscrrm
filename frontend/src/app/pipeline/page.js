@@ -37,12 +37,13 @@ export default function PipelinePage() {
     commodity: '',
     eta: '',
     current_status: '',
-    container_no: '',
-    container_size: '20',
-    date_of_arrival: '',
-    assigned_to_stage2: 0,
-    assigned_to_stage3: 0,
-    customer_id: 0,
+    containers: [
+      {
+        container_no: '',
+        container_size: '20',
+        date_of_arrival: ''
+      }
+    ],
     notification_email: ''
   });
 
@@ -73,8 +74,8 @@ export default function PipelinePage() {
           fetch(process.env.NEXT_PUBLIC_API_URL + "/api/users", { credentials: "include" })
         ]);
       } else {
-        // Employee sees only their assigned jobs (no users list needed)
-        console.log("Employee user - fetching assigned jobs only");
+        // Employee sees only their stage jobs
+        console.log("Employee user - fetching stage jobs only");
         jobsRes = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/myjobs", { credentials: "include" });
         usersRes = { ok: true, status: 200 }; // Mock successful response for users
       }
@@ -124,69 +125,6 @@ export default function PipelinePage() {
       case 'job_date':
         if (value && new Date(value) > new Date()) error = 'Job date cannot be in the future';
         break;
-      case 'edi_job_no':
-        if (value && value.length < 3) error = 'EDI job number must be at least 3 characters';
-        break;
-      case 'edi_date':
-        if (value && new Date(value) > new Date()) error = 'EDI date cannot be in the future';
-        break;
-      case 'consignee':
-        if (value && value.length < 5) error = 'Consignee must be at least 5 characters';
-        break;
-      case 'shipper':
-        if (value && value.length < 5) error = 'Shipper must be at least 5 characters';
-        break;
-      case 'port_of_discharge':
-        if (value && value.length < 3) error = 'Port of discharge must be at least 3 characters';
-        break;
-      case 'port_of_loading':
-        if (value && value.length < 3) error = 'Port of loading must be at least 3 characters';
-        break;
-      case 'country_of_shipment':
-        if (value && value.length < 2) error = 'Country must be at least 2 characters';
-        break;
-      case 'hbl_no':
-        if (value && value.length < 3) error = 'HBL number must be at least 3 characters';
-        break;
-      case 'hbl_date':
-        if (value && new Date(value) > new Date()) error = 'HBL date cannot be in the future';
-        break;
-      case 'mbl_no':
-        if (value && value.length < 3) error = 'MBL number must be at least 3 characters';
-        break;
-      case 'mbl_date':
-        if (value && new Date(value) > new Date()) error = 'MBL date cannot be in future';
-        break;
-      case 'shipping_line':
-        if (value && value.length < 2) error = 'Shipping line must be at least 2 characters';
-        break;
-      case 'forwarder':
-        if (value && value.length < 2) error = 'Forwarder must be at least 2 characters';
-        break;
-      case 'weight':
-        if (value && (isNaN(value) || parseFloat(value) < 0)) error = 'Weight must be a positive number';
-        break;
-      case 'packages':
-        if (value && (isNaN(value) || parseInt(value) < 0)) error = 'Packages must be a positive number';
-        break;
-      case 'invoice_no':
-        if (value && value.length < 3) error = 'Invoice number must be at least 3 characters';
-        break;
-      case 'invoice_date':
-        if (value && new Date(value) > new Date()) error = 'Invoice date cannot be in future';
-        break;
-      case 'gateway_igm':
-        if (value && value.length < 3) error = 'Gateway IGM must be at least 3 characters';
-        break;
-      case 'gateway_igm_date':
-        if (value && new Date(value) > new Date()) error = 'Gateway IGM date cannot be in future';
-        break;
-      case 'local_igm':
-        if (value && value.length < 3) error = 'Local IGM must be at least 3 characters';
-        break;
-      case 'local_igm_date':
-        if (value && new Date(value) > new Date()) error = 'Local IGM date cannot be in future';
-        break;
       case 'commodity':
         if (value && value.length < 3) error = 'Commodity must be at least 3 characters';
         break;
@@ -195,12 +133,6 @@ export default function PipelinePage() {
         break;
       case 'current_status':
         if (value && value.length < 3) error = 'Current status must be at least 3 characters';
-        break;
-      case 'container_no':
-        if (value && value.length < 3) error = 'Container number must be at least 3 characters';
-        break;
-      case 'date_of_arrival':
-        if (value && new Date(value) > new Date()) error = 'Date of arrival cannot be in future';
         break;
       case 'notification_email':
         if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Please enter a valid email address';
@@ -241,15 +173,45 @@ export default function PipelinePage() {
     }
     
     // Fields that should be numbers
-    const numberFields = ['weight', 'packages', 'assigned_to_stage2', 'assigned_to_stage3', 'customer_id'];
+    const numberFields = ['weight', 'packages'];
     
     setFormData(prev => ({
       ...prev,
       [name]: numberFields.includes(name) ? (parseInt(value) || 0) : value
     }));
-  };
+      };
 
-  // Helper function to render form field with error
+    // Container management functions
+    const addContainer = () => {
+      const newContainer = {
+        container_no: '',
+        container_size: '20',
+        date_of_arrival: ''
+      };
+      
+      setFormData(prev => ({
+        ...prev,
+        containers: [...(prev.containers || []), newContainer]
+      }));
+    };
+
+    const removeContainer = (index) => {
+      setFormData(prev => ({
+        ...prev,
+        containers: prev.containers.filter((_, i) => i !== index)
+      }));
+    };
+
+    const handleContainerChange = (index, field, value) => {
+      setFormData(prev => ({
+        ...prev,
+        containers: prev.containers.map((container, i) => 
+          i === index ? { ...container, [field]: value } : container
+        )
+      }));
+    };
+  
+    // Helper function to render form field with error
   const renderFormField = (name, label, type = 'text', required = false, placeholder = '', rows = null) => {
     const isError = errors[name];
     const inputClass = `w-full border rounded-md px-3 py-2 text-black ${
@@ -295,27 +257,6 @@ export default function PipelinePage() {
                 <option value="40">{"40'"}</option>
                 <option value="LCL">LCL</option>
               </>
-            ) : name === 'assigned_to_stage2' ? (
-              <>
-                <option value={0}>Select Employee</option>
-                {stage2Employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
-                ))}
-              </>
-            ) : name === 'assigned_to_stage3' ? (
-              <>
-                <option value={0}>Select Employee</option>
-                {stage3Employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
-                ))}
-              </>
-            ) : name === 'customer_id' ? (
-              <>
-                <option value={0}>Select Customer</option>
-                {customers.map(customer => (
-                  <option key={customer.id} value={customer.id}>{customer.username}</option>
-                ))}
-              </>
             ) : null}
           </select>
           {isError && (
@@ -359,7 +300,6 @@ export default function PipelinePage() {
     try {
       console.log("Sending form data:", formData);
       
-      // Create a simplified request with only required fields for testing
       const testData = {
         job_no: formData.job_no,
         job_date: formData.job_date || "",
@@ -388,12 +328,7 @@ export default function PipelinePage() {
         commodity: formData.commodity || "",
         eta: formData.eta || "",
         current_status: formData.current_status || "",
-        container_no: formData.container_no || "",
-        container_size: formData.container_size || "20",
-        date_of_arrival: formData.date_of_arrival || "",
-        assigned_to_stage2: formData.assigned_to_stage2 || 0,
-        assigned_to_stage3: formData.assigned_to_stage3 || 0,
-        customer_id: formData.customer_id || 0,
+        containers: formData.containers || [],
         notification_email: formData.notification_email || ""
       };
       
@@ -416,7 +351,7 @@ export default function PipelinePage() {
           hbl_no: '', hbl_date: '', mbl_no: '', mbl_date: '', shipping_line: '', forwarder: '',
           weight: 0, packages: 0, invoice_no: '', invoice_date: '', gateway_igm: '', gateway_igm_date: '',
           local_igm: '', local_igm_date: '', commodity: '', eta: '', current_status: '',
-          container_no: '', container_size: '20', date_of_arrival: '', assigned_to_stage2: 0, assigned_to_stage3: 0, customer_id: 0, notification_email: ''
+          containers: [], notification_email: ''
         });
         fetchData();
       } else {
@@ -484,12 +419,7 @@ export default function PipelinePage() {
       commodity: job.stage1?.commodity || '',
       eta: job.stage1?.eta || '',
       current_status: job.stage1?.current_status || '',
-      container_no: job.stage1?.container_no || '',
-      container_size: job.stage1?.container_size || '20',
-      date_of_arrival: job.stage1?.date_of_arrival || '',
-      assigned_to_stage2: job.assigned_to_stage2 || 0,
-      assigned_to_stage3: job.assigned_to_stage3 || 0,
-      customer_id: job.customer_id || 0,
+      containers: job.stage1Containers || [],
       notification_email: job.notification_email || ''
     });
     setShowEditModal(true);
@@ -508,9 +438,6 @@ export default function PipelinePage() {
     try {
       const updateData = {
         ...formData,
-        assigned_to_stage2: parseInt(formData.assigned_to_stage2) || 0,
-        assigned_to_stage3: parseInt(formData.assigned_to_stage3) || 0,
-        customer_id: parseInt(formData.customer_id) || 0,
         weight: parseInt(formData.weight) || 0,
         packages: parseInt(formData.packages) || 0
       };
@@ -533,7 +460,7 @@ export default function PipelinePage() {
           hbl_no: '', hbl_date: '', mbl_no: '', mbl_date: '', shipping_line: '', forwarder: '',
           weight: 0, packages: 0, invoice_no: '', invoice_date: '', gateway_igm: '', gateway_igm_date: '',
           local_igm: '', local_igm_date: '', commodity: '', eta: '', current_status: '',
-          container_no: '', container_size: '20', date_of_arrival: '', assigned_to_stage2: 0, assigned_to_stage3: 0, customer_id: 0, notification_email: ''
+          containers: [], notification_email: ''
         });
         fetchData();
         alert('Job updated successfully!');
@@ -548,10 +475,6 @@ export default function PipelinePage() {
        setIsSubmitting(false);
      }
   };
-
-  const stage2Employees = users.filter(u => u.role === 'stage2_employee') || [];
-  const stage3Employees = users.filter(u => u.role === 'stage3_employee') || [];
-  const customers = users.filter(u => u.role === 'customer') || [];
 
   const [userRole, setUserRole] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -595,12 +518,14 @@ export default function PipelinePage() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {(isAdmin || isSubadmin) ? 'Pipeline Management' : 'My Assigned Jobs'}
+                {(isAdmin || isSubadmin) ? 'Pipeline Management' : `${userRole === 'stage1_employee' ? 'My Created Jobs' : userRole === 'stage2_employee' ? 'Stage 2 Jobs' : userRole === 'stage3_employee' ? 'Stage 3 Jobs' : 'Stage 4 Jobs'}`}
               </h1>
               <p className="text-gray-600 mt-1">
                 {(isAdmin || isSubadmin)
                   ? 'Manage import/export pipeline jobs' 
-                  : 'View and manage your assigned pipeline jobs'
+                  : userRole === 'stage1_employee' 
+                    ? 'View and manage jobs you created'
+                    : `View and manage jobs currently in ${userRole === 'stage2_employee' ? 'Stage 2 (Customs & Docs)' : userRole === 'stage3_employee' ? 'Stage 3 (Clearance & Logistics)' : 'Stage 4 (Billing)'}`
                 }
               </p>
             </div>
@@ -644,7 +569,7 @@ export default function PipelinePage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
-              {(isAdmin || isSubadmin) ? 'All Pipeline Jobs' : 'My Assigned Jobs'}
+              {(isAdmin || isSubadmin) ? 'All Pipeline Jobs' : 'My Stage Jobs'}
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -732,434 +657,140 @@ export default function PipelinePage() {
               </div>
 
               <form onSubmit={handleCreateJob} className="space-y-6">
-                {/* Validation Summary */}
-                {Object.keys(errors).length > 0 && (
-                  <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-red-800">
-                          Please fix the following errors:
-                        </h3>
-                        <div className="mt-2 text-sm text-red-700">
-                          <ul className="list-disc pl-5 space-y-1">
-                            {Object.entries(errors).map(([field, error]) => (
-                              <li key={field}>{error}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Job No. *</label>
-                    <input
-                      type="text"
-                      name="job_no"
-                      value={formData.job_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Job Date</label>
-                    <input
-                      type="date"
-                      name="job_date"
-                      value={formData.job_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('job_no', 'Job No. *', 'text', true)}
+                  {renderFormField('job_date', 'Job Date', 'date')}
                 </div>
 
                 {/* EDI Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Job No.</label>
-                    <input
-                      type="text"
-                      name="edi_job_no"
-                      value={formData.edi_job_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Date</label>
-                    <input
-                      type="date"
-                      name="edi_date"
-                      value={formData.edi_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('edi_job_no', 'EDI Job No.')}
+                  {renderFormField('edi_date', 'EDI Date', 'date')}
                 </div>
 
                 {/* Parties */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Consignee</label>
-                    <textarea
-                      name="consignee"
-                      value={formData.consignee}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      rows="3"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Shipper</label>
-                    <textarea
-                      name="shipper"
-                      value={formData.shipper}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      rows="3"
-                    />
-                  </div>
+                  {renderFormField('consignee', 'Consignee', 'textarea')}
+                  {renderFormField('shipper', 'Shipper', 'textarea')}
                 </div>
 
                 {/* Ports */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Port of Discharge</label>
-                    <input
-                      type="text"
-                      name="port_of_discharge"
-                      value={formData.port_of_discharge}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Final Place of Delivery</label>
-                    <input
-                      type="text"
-                      name="final_place_of_delivery"
-                      value={formData.final_place_of_delivery}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('port_of_discharge', 'Port of Discharge')}
+                  {renderFormField('final_place_of_delivery', 'Final Place of Delivery')}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Port of Loading</label>
-                    <input
-                      type="text"
-                      name="port_of_loading"
-                      value={formData.port_of_loading}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Country of Shipment</label>
-                    <input
-                      type="text"
-                      name="country_of_shipment"
-                      value={formData.country_of_shipment}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('port_of_loading', 'Port of Loading')}
+                  {renderFormField('country_of_shipment', 'Country of Shipment')}
                 </div>
 
                 {/* Bill of Lading */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">HBL No.</label>
-                    <input
-                      type="text"
-                      name="hbl_no"
-                      value={formData.hbl_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">HBL Date</label>
-                    <input
-                      type="date"
-                      name="hbl_date"
-                      value={formData.hbl_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('hbl_no', 'HBL No.')}
+                  {renderFormField('hbl_date', 'HBL Date', 'date')}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">MBL No.</label>
-                    <input
-                      type="text"
-                      name="mbl_no"
-                      value={formData.mbl_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">MBL Date</label>
-                    <input
-                      type="date"
-                      name="mbl_date"
-                      value={formData.mbl_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('mbl_no', 'MBL No.')}
+                  {renderFormField('mbl_date', 'MBL Date', 'date')}
                 </div>
 
                 {/* Shipping Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Line</label>
-                    <input
-                      type="text"
-                      name="shipping_line"
-                      value={formData.shipping_line}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Forwarder</label>
-                    <input
-                      type="text"
-                      name="forwarder"
-                      value={formData.forwarder}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py- text-black"
-                    />
-                  </div>
+                  {renderFormField('shipping_line', 'Shipping Line')}
+                  {renderFormField('forwarder', 'Forwarder')}
                 </div>
 
                 {/* Cargo Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Weight (KG)</label>
-                     <input
-                       type="text"
-                       name="weight"
-                       value={formData.weight}
-                       onChange={handleInputChange}
-                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                       placeholder="Enter weight in KG"
-                     />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Packages</label>
-                     <input
-                       type="text"
-                       name="packages"
-                       value={formData.packages}
-                       onChange={handleInputChange}
-                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                       placeholder="Enter number of packages"
-                     />
-                   </div>
+                  {renderFormField('weight', 'Weight (KG)', 'text')}
+                  {renderFormField('packages', 'Packages', 'text')}
                 </div>
 
                 {/* Invoice Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice No.</label>
-                    <input
-                      type="text"
-                      name="invoice_no"
-                      value={formData.invoice_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date</label>
-                    <input
-                      type="date"
-                      name="invoice_date"
-                      value={formData.invoice_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                </div>
-
-                {/* IGM Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM</label>
-                    <input
-                      type="text"
-                      name="gateway_igm"
-                      value={formData.gateway_igm}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />      
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM Date</label>
-                    <input
-                      type="date"
-                      name="gateway_igm_date"
-                      value={formData.gateway_igm_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM</label>
-                    <input
-                      type="text"
-                      name="local_igm"
-                      value={formData.local_igm}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM Date</label>
-                    <input
-                      type="date"
-                      name="local_igm_date"
-                      value={formData.local_igm_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('invoice_no', 'Invoice No.')}
+                  {renderFormField('invoice_date', 'Invoice Date', 'date')}
                 </div>
 
                 {/* Additional Details */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Commodity</label>
-                  <textarea
-                    name="commodity"
-                    value={formData.commodity}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    rows="2"
-                  />
-                </div>
+                {renderFormField('commodity', 'Commodity', 'textarea')}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ETA</label>
-                    <input
-                      type="date"
-                      name="eta"
-                      value={formData.eta}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
-                    <input
-                      type="text"
-                      name="current_status"
-                      value={formData.current_status}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('eta', 'ETA', 'date')}
+                  {renderFormField('current_status', 'Current Status')}
                 </div>
 
                 {/* Container Details */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Container No.</label>
-                    <input
-                      type="text"
-                      name="container_no"
-                      value={formData.container_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
-                    <select
-                      name="container_size"
-                      value={formData.container_size}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-gray-900">Container Details</h3>
+                    <button
+                      type="button"
+                      onClick={addContainer}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
                     >
-                      <option value="20">{"20'"}</option>
-                      <option value="40">{"40'"}</option>
-                      <option value="LCL">LCL</option>
-                    </select>
+                      <span>+</span> Add Container
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
-                    <input
-                      type="date"
-                      name="date_of_arrival"
-                      value={formData.date_of_arrival}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                </div>
-
-                {/* Assignments */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Stage 2 Employee</label>
-                    <select
-                      name="assigned_to_stage2"
-                      value={formData.assigned_to_stage2}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    >
-                      <option value={0}>Select Employee</option>
-                      {stage2Employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Stage 3 Employee</label>
-                    <select
-                      name="assigned_to_stage3"
-                      value={formData.assigned_to_stage3}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    >
-                      <option value={0}>Select Employee</option>
-                      {stage3Employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign Customer</label>
-                    <select
-                      name="customer_id"
-                      value={formData.customer_id}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    >
-                      <option value={0}>Select Customer</option>
-                      {customers.map(customer => (
-                        <option key={customer.id} value={customer.id}>{customer.username}</option>
-                      ))}
-                    </select>
-                  </div>
+                  
+                  {formData.containers && formData.containers.map((container, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="font-medium text-gray-900">Container {index + 1}</h4>
+                        <button
+                          type="button"
+                          onClick={() => removeContainer(index)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Container No.</label>
+                          <input
+                            type="text"
+                            name={`container_no_${index}`}
+                            value={container.container_no}
+                            onChange={(e) => handleContainerChange(index, 'container_no', e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
+                          <select
+                            name={`container_size_${index}`}
+                            value={container.container_size}
+                            onChange={(e) => handleContainerChange(index, 'container_size', e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
+                          >
+                            <option value="20">{"20'"}</option>
+                            <option value="40">{"40'"}</option>
+                            <option value="LCL">LCL</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
+                          <input
+                            type="date"
+                            name={`container_date_of_arrival_${index}`}
+                            value={container.date_of_arrival}
+                            onChange={(e) => handleContainerChange(index, 'date_of_arrival', e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(!formData.containers || formData.containers.length === 0) && (
+                    <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                      <p>No containers added yet. Click "Add Container" to start.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Notification Email */}
@@ -1229,436 +860,138 @@ export default function PipelinePage() {
               </div>
 
                              <form onSubmit={handleUpdateJob} className="space-y-6">
-                 {/* Validation Summary */}
-                 {Object.keys(errors).length > 0 && (
-                   <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                     <div className="flex">
-                       <div className="flex-shrink-0">
-                         <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                         </svg>
-                       </div>
-                       <div className="ml-3">
-                         <h3 className="text-sm font-medium text-red-800">
-                           Please fix the following errors:
-                         </h3>
-                         <div className="mt-2 text-sm text-red-700">
-                           <ul className="list-disc pl-5 space-y-1">
-                             {Object.entries(errors).map(([field, error]) => (
-                               <li key={field}>{error}</li>
-                             ))}
-                           </ul>
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                 )}
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Job No. *</label>
-                    <input
-                      type="text"
-                      name="job_no"
-                      value={formData.job_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Job Date</label>
-                    <input
-                      type="date"
-                      name="job_date"
-                      value={formData.job_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('job_no', 'Job No. *', 'text', true)}
+                  {renderFormField('job_date', 'Job Date', 'date')}
                 </div>
 
                 {/* EDI Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Job No.</label>
-                    <input
-                      type="text"
-                      name="edi_job_no"
-                      value={formData.edi_job_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Date</label>
-                    <input
-                      type="date"
-                      name="edi_date"
-                      value={formData.edi_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('edi_job_no', 'EDI Job No.')}
+                  {renderFormField('edi_date', 'EDI Date', 'date')}
                 </div>
 
                 {/* Parties */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Consignee</label>
-                    <textarea
-                      name="consignee"
-                      value={formData.consignee}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      rows="3"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Shipper</label>
-                    <textarea
-                      name="shipper"
-                      value={formData.shipper}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      rows="3"
-                    />
-                  </div>
+                  {renderFormField('consignee', 'Consignee', 'textarea')}
+                  {renderFormField('shipper', 'Shipper', 'textarea')}
                 </div>
 
                 {/* Ports */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Port of Discharge</label>
-                    <input
-                      type="text"
-                      name="port_of_discharge"
-                      value={formData.port_of_discharge}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Final Place of Delivery</label>
-                    <input
-                      type="text"
-                      name="final_place_of_delivery"
-                      value={formData.final_place_of_delivery}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Port of Loading</label>
-                    <input
-                      type="text"
-                      name="port_of_loading"
-                      value={formData.port_of_loading}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('port_of_discharge', 'Port of Discharge')}
+                  {renderFormField('final_place_of_delivery', 'Final Place of Delivery')}
+                  {renderFormField('port_of_loading', 'Port of Loading')}
                 </div>
 
                 {/* Country and Documents */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Country of Shipment</label>
-                    <input
-                      type="text"
-                      name="country_of_shipment"
-                      value={formData.country_of_shipment}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">HBL No.</label>
-                    <input
-                      type="text"
-                      name="hbl_no"
-                      value={formData.hbl_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('country_of_shipment', 'Country of Shipment')}
+                  {renderFormField('hbl_no', 'HBL No.')}
                 </div>
 
                 {/* HBL and MBL Dates */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">HBL Date</label>
-                    <input
-                      type="date"
-                      name="hbl_date"
-                      value={formData.hbl_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">MBL No.</label>
-                    <input
-                      type="text"
-                      name="mbl_no"
-                      value={formData.mbl_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('hbl_date', 'HBL Date', 'date')}
+                  {renderFormField('mbl_no', 'MBL No.')}
                 </div>
 
                 {/* MBL Date and Shipping Line */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">MBL Date</label>
-                    <input
-                      type="date"
-                      name="mbl_date"
-                      value={formData.mbl_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Line</label>
-                    <input
-                      type="text"
-                      name="shipping_line"
-                      value={formData.shipping_line}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('mbl_date', 'MBL Date', 'date')}
+                  {renderFormField('shipping_line', 'Shipping Line')}
                 </div>
 
                 {/* Forwarder and Weight */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Forwarder</label>
-                    <input
-                      type="text"
-                      name="forwarder"
-                      value={formData.forwarder}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                                     <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-                     <input
-                       type="text"
-                       name="weight"
-                       value={formData.weight}
-                       onChange={handleInputChange}
-                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                       placeholder="Enter weight in KG"
-                     />
-                   </div>
+                  {renderFormField('forwarder', 'Forwarder')}
+                  {renderFormField('weight', 'Weight (kg)', 'text')}
                 </div>
 
-                {/* Packages and Invoice */}
+                {/* Packages */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Packages</label>
-                     <input
-                       type="text"
-                       name="packages"
-                       value={formData.packages}
-                       onChange={handleInputChange}
-                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                       placeholder="Enter number of packages"
-                     />
-                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice No.</label>
-                    <input
-                      type="text"
-                      name="invoice_no"
-                      value={formData.invoice_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('packages', 'Packages', 'text')}
+                  {renderFormField('invoice_date', 'Invoice Date', 'date')}
                 </div>
 
-                {/* Invoice Date and Gateway IGM */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date</label>
-                    <input
-                      type="date"
-                      name="invoice_date"
-                      value={formData.invoice_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM</label>
-                    <input
-                      type="text"
-                      name="gateway_igm"
-                      value={formData.gateway_igm}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                </div>
-
-                {/* Gateway IGM Date and Local IGM */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM Date</label>
-                    <input
-                      type="date"
-                      name="gateway_igm_date"
-                      value={formData.gateway_igm_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM</label>
-                    <input
-                      type="text"
-                      name="local_igm"
-                      value={formData.local_igm}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                </div>
-
-                {/* Local IGM Date and Commodity */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM Date</label>
-                    <input
-                      type="date"
-                      name="local_igm_date"
-                      value={formData.local_igm_date}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Commodity</label>
-                    <input
-                      type="text"
-                      name="commodity"
-                      value={formData.commodity}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                </div>
+                {/* Commodity */}
+                {renderFormField('commodity', 'Commodity', 'text')}
 
                 {/* ETA and Current Status */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ETA</label>
-                    <input
-                      type="date"
-                      name="eta"
-                      value={formData.eta}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
-                    <input
-                      type="text"
-                      name="current_status"
-                      value={formData.current_status}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+                  {renderFormField('eta', 'ETA', 'date')}
+                  {renderFormField('current_status', 'Current Status')}
                 </div>
 
                 {/* Container Details */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Container No.</label>
-                    <input
-                      type="text"
-                      name="container_no"
-                      value={formData.container_no}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
-                    <select
-                      name="container_size"
-                      value={formData.container_size}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-gray-900">Container Details</h3>
+                    <button
+                      type="button"
+                      onClick={addContainer}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
                     >
-                      <option value="20">{"20'"}</option>
-                      <option value="40">{"40'"}</option>
-                      <option value="LCL">LCL</option>
-                    </select>
+                      <span>+</span> Add Container
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
-                    <input
-                      type="date"
-                      name="date_of_arrival"
-                      value={formData.date_of_arrival}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
-                </div>
-
-                {/* Assignments */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Stage 2 Employee</label>
-                    <select
-                      name="assigned_to_stage2"
-                      value={formData.assigned_to_stage2}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    >
-                      <option value={0}>Select Employee</option>
-                      {stage2Employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Stage 3 Employee</label>
-                    <select
-                      name="assigned_to_stage3"
-                      value={formData.assigned_to_stage3}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    >
-                      <option value={0}>Select Employee</option>
-                      {stage3Employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.username} - {emp.designation}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign Customer</label>
-                    <select
-                      name="customer_id"
-                      value={formData.customer_id}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    >
-                      <option value={0}>Select Customer</option>
-                      {customers.map(customer => (
-                        <option key={customer.id} value={customer.id}>{customer.username}</option>
-                      ))}
-                    </select>
-                  </div>
+                  
+                  {formData.containers && formData.containers.map((container, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="font-medium text-gray-900">Container {index + 1}</h4>
+                        <button
+                          type="button"
+                          onClick={() => removeContainer(index)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Container No.</label>
+                          <input
+                            type="text"
+                            name={`container_no_${index}`}
+                            value={container.container_no}
+                            onChange={(e) => handleContainerChange(index, 'container_no', e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
+                          <select
+                            name={`container_size_${index}`}
+                            value={container.container_size}
+                            onChange={(e) => handleContainerChange(index, 'container_size', e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
+                          >
+                            <option value="20">{"20'"}</option>
+                            <option value="40">{"40'"}</option>
+                            <option value="LCL">LCL</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
+                          <input
+                            type="date"
+                            name={`container_date_of_arrival_${index}`}
+                            value={container.date_of_arrival}
+                            onChange={(e) => handleContainerChange(index, 'date_of_arrival', e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(!formData.containers || formData.containers.length === 0) && (
+                    <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                      <p>No containers added yet. Click "Add Container" to start.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Notification Email */}
