@@ -25,7 +25,13 @@ export default function Stage2Page() {
     original_doct_recd_date: '',
     drn_no: '',
     irn_no: '',
-    documents_type: ''
+    documents_type: '',
+    // Moved fields from Stage 1
+    invoice_no: '',
+    gateway_igm: '',
+    gateway_igm_date: '',
+    local_igm: '',
+    local_igm_date: ''
   });
 
   useEffect(() => {
@@ -80,30 +86,74 @@ export default function Stage2Page() {
     }
   }
 
-  const handleJobSelect = (job) => {
-    setSelectedJob(job);
-    // Pre-fill form with existing stage2 data if available
-    if (job.stage2) {
-      setFormData({
-        hsn_code: job.stage2.hsn_code || '',
-        filing_requirement: job.stage2.filing_requirement || '',
-        checklist_sent_date: job.stage2.checklist_sent_date ? job.stage2.checklist_sent_date.split('T')[0] : '',
-        approval_date: job.stage2.approval_date ? job.stage2.approval_date.split('T')[0] : '',
-        bill_of_entry_no: job.stage2.bill_of_entry_no || '',
-        bill_of_entry_date: job.stage2.bill_of_entry_date ? job.stage2.bill_of_entry_date.split('T')[0] : '',
-        debit_note: job.stage2.debit_note || '',
-        debit_paid_by: job.stage2.debit_paid_by || '',
-        duty_amount: job.stage2.duty_amount || 0,
-        duty_paid_by: job.stage2.duty_paid_by || '',
-        ocean_freight: job.stage2.ocean_freight || 0,
-        destination_charges: job.stage2.destination_charges || 0,
-        original_doct_recd_date: job.stage2.original_doct_recd_date ? job.stage2.original_doct_recd_date.split('T')[0] : '',
-        drn_no: job.stage2.drn_no || '',
-        irn_no: job.stage2.irn_no || '',
-        documents_type: job.stage2.documents_type || ''
+  const handleJobSelect = async (job) => {
+    try {
+      // Fetch the complete job data including Stage2 data
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/jobs/${job.id}`, {
+        credentials: "include"
       });
-    } else {
-      // Reset form for new entry
+      
+      if (res.ok) {
+        const completeJob = await res.json();
+        console.log("Complete job data:", completeJob);
+        setSelectedJob(completeJob);
+        
+        // Pre-fill form with existing stage2 data if available
+        if (completeJob.stage2) {
+          setFormData({
+            hsn_code: completeJob.stage2.hsn_code || '',
+            filing_requirement: completeJob.stage2.filing_requirement || '',
+            checklist_sent_date: completeJob.stage2.checklist_sent_date ? completeJob.stage2.checklist_sent_date.split('T')[0] : '',
+            approval_date: completeJob.stage2.approval_date ? completeJob.stage2.approval_date.split('T')[0] : '',
+            bill_of_entry_no: completeJob.stage2.bill_of_entry_no || '',
+            bill_of_entry_date: completeJob.stage2.bill_of_entry_date ? completeJob.stage2.bill_of_entry_date.split('T')[0] : '',
+            debit_note: completeJob.stage2.debit_note || '',
+            debit_paid_by: completeJob.stage2.debit_paid_by || '',
+            duty_amount: completeJob.stage2.duty_amount || 0,
+            duty_paid_by: completeJob.stage2.duty_paid_by || '',
+            ocean_freight: completeJob.stage2.ocean_freight || 0,
+            destination_charges: completeJob.stage2.destination_charges || 0,
+            original_doct_recd_date: completeJob.stage2.original_doct_recd_date ? completeJob.stage2.original_doct_recd_date.split('T')[0] : '',
+            drn_no: completeJob.stage2.drn_no || '',
+            irn_no: completeJob.stage2.irn_no || '',
+            documents_type: completeJob.stage2.documents_type || '',
+            // Moved fields from Stage 1
+            invoice_no: completeJob.stage2.invoice_no || completeJob.stage1?.invoice_no || '',
+            gateway_igm: completeJob.stage2.gateway_igm || completeJob.stage1?.gateway_igm || '',
+            gateway_igm_date: completeJob.stage2.gateway_igm_date ? completeJob.stage2.gateway_igm_date.split('T')[0] : (completeJob.stage1?.gateway_igm_date ? completeJob.stage1.gateway_igm_date.split('T')[0] : ''),
+            local_igm: completeJob.stage2.local_igm || completeJob.stage1?.local_igm || '',
+            local_igm_date: completeJob.stage2.local_igm_date ? completeJob.stage2.local_igm_date.split('T')[0] : (completeJob.stage1?.local_igm_date ? completeJob.stage1.local_igm_date.split('T')[0] : '')
+          });
+        } else {
+          // Reset form for new entry
+          setFormData({
+            hsn_code: '', filing_requirement: '', checklist_sent_date: '', approval_date: '',
+            bill_of_entry_no: '', bill_of_entry_date: '', debit_note: '', debit_paid_by: '',
+            duty_amount: 0, duty_paid_by: '', ocean_freight: 0, destination_charges: 0,
+            original_doct_recd_date: '', drn_no: '', irn_no: '', documents_type: '',
+            // Initialize Stage 1 fields
+            invoice_no: completeJob.stage1?.invoice_no || '',
+            gateway_igm: completeJob.stage1?.gateway_igm || '',
+            gateway_igm_date: completeJob.stage1?.gateway_igm_date ? completeJob.stage1.gateway_igm_date.split('T')[0] : '',
+            local_igm: completeJob.stage1?.local_igm || '',
+            local_igm_date: completeJob.stage1?.local_igm_date ? completeJob.stage1.local_igm_date.split('T')[0] : ''
+          });
+        }
+      } else {
+        console.error("Failed to fetch complete job data");
+        // Fallback to original job data
+        setSelectedJob(job);
+        setFormData({
+          hsn_code: '', filing_requirement: '', checklist_sent_date: '', approval_date: '',
+          bill_of_entry_no: '', bill_of_entry_date: '', debit_note: '', debit_paid_by: '',
+          duty_amount: 0, duty_paid_by: '', ocean_freight: 0, destination_charges: 0,
+          original_doct_recd_date: '', drn_no: '', irn_no: '', documents_type: ''
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching complete job data:", error);
+      // Fallback to original job data
+      setSelectedJob(job);
       setFormData({
         hsn_code: '', filing_requirement: '', checklist_sent_date: '', approval_date: '',
         bill_of_entry_no: '', bill_of_entry_date: '', debit_note: '', debit_paid_by: '',
@@ -111,6 +161,7 @@ export default function Stage2Page() {
         original_doct_recd_date: '', drn_no: '', irn_no: '', documents_type: ''
       });
     }
+    
     setShowUpdateModal(true);
   };
 
@@ -122,28 +173,7 @@ export default function Stage2Page() {
     }));
   };
 
-  const fillTestData = () => {
-    const testData = {
-      hsn_code: 'HSN123456',
-      filing_requirement: 'Complete customs documentation required including invoice, packing list, and certificate of origin',
-      checklist_sent_date: '2024-01-15',
-      approval_date: '2024-01-20',
-      bill_of_entry_no: 'BE2024001',
-      bill_of_entry_date: '2024-01-22',
-      debit_note: 'DN2024001',
-      debit_paid_by: 'Customer',
-      duty_amount: 25000.00,
-      duty_paid_by: 'Customer',
-      ocean_freight: 15000.00,
-      destination_charges: 5000.00,
-      original_doct_recd_date: '2024-01-18',
-      drn_no: 'DRN2024001',
-      irn_no: 'IRN2024001',
-      documents_type: 'Commercial Invoice, Packing List, Certificate of Origin, Bill of Lading'
-    };
-    setFormData(testData);
-    alert('Test data filled! Please review and submit.');
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -330,16 +360,7 @@ export default function Stage2Page() {
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Documents Type</label>
-                    <input
-                      type="text"
-                      name="documents_type"
-                      value={formData.documents_type}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                    />
-                  </div>
+
                 </div>
 
                 <div>
@@ -508,16 +529,81 @@ export default function Stage2Page() {
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Documents Type</label>
+                    <input
+                      type="text"
+                      name="documents_type"
+                      value={formData.documents_type}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
                 </div>
 
-                <div className="flex justify-between pt-6">
-                  <button
-                    type="button"
-                    onClick={fillTestData}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                  >
-                    Fill Test Data
-                  </button>
+                {/* Invoice No */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Invoice No.</label>
+                  <input
+                    type="text"
+                    name="invoice_no"
+                    value={formData.invoice_no}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    placeholder="Enter invoice number"
+                  />
+                </div>
+
+                {/* IGM Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM</label>
+                    <input
+                      type="text"
+                      name="gateway_igm"
+                      value={formData.gateway_igm}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      placeholder="Enter gateway IGM"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM Date</label>
+                    <input
+                      type="date"
+                      name="gateway_igm_date"
+                      value={formData.gateway_igm_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM</label>
+                    <input
+                      type="text"
+                      name="local_igm"
+                      value={formData.local_igm}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      placeholder="Enter local IGM"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM Date</label>
+                    <input
+                      type="date"
+                      name="local_igm_date"
+                      value={formData.local_igm_date}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-6">
                   <div className="flex gap-4">
                     <button
                       type="button"
