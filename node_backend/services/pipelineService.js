@@ -1,6 +1,7 @@
 const {
   PipelineJob,
   Stage1Data,
+  Stage1Container,
   Stage2Data,
   Stage3Data,
   Stage3Container,
@@ -23,23 +24,13 @@ class PipelineService {
             attributes: ["username"],
           },
           {
-            model: User,
-            as: "Stage2User",
-            attributes: ["username"],
-          },
-          {
-            model: User,
-            as: "Stage3User",
-            attributes: ["username"],
-          },
-          {
-            model: User,
-            as: "Customer",
-            attributes: ["username"],
-          },
-          {
             model: Stage1Data,
             as: "Stage1",
+            attributes: { exclude: ["created_at", "updated_at"] },
+          },
+          {
+            model: Stage1Container,
+            as: "Stage1Containers",
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
@@ -121,21 +112,6 @@ class PipelineService {
             attributes: ["username"],
           },
           {
-            model: User,
-            as: "Stage2User",
-            attributes: ["username"],
-          },
-          {
-            model: User,
-            as: "Stage3User",
-            attributes: ["username"],
-          },
-          {
-            model: User,
-            as: "Customer",
-            attributes: ["username"],
-          },
-          {
             model: Stage1Data,
             as: "Stage1",
             attributes: { exclude: ["created_at", "updated_at"] },
@@ -199,9 +175,7 @@ class PipelineService {
           current_stage: "stage1",
           status: "active",
           created_by: createdBy,
-          assigned_to_stage2: stage1Data.assigned_to_stage2 || null,
-          assigned_to_stage3: stage1Data.assigned_to_stage3 || null,
-          customer_id: stage1Data.customer_id || null,
+
           notification_email: stage1Data.notification_email || null,
         },
         { transaction }
@@ -238,12 +212,25 @@ class PipelineService {
           commodity: stage1Data.commodity || null,
           eta: stage1Data.eta || null,
           current_status: stage1Data.current_status || null,
-          container_no: stage1Data.container_no || null,
-          container_size: stage1Data.container_size || null,
-          date_of_arrival: stage1Data.date_of_arrival || null,
+          // Remove single container fields as we'll use Stage1Container model
         },
         { transaction }
       );
+
+      // Create containers if provided
+      if (stage1Data.containers && Array.isArray(stage1Data.containers) && stage1Data.containers.length > 0) {
+        for (const container of stage1Data.containers) {
+          await Stage1Container.create(
+            {
+              job_id: job.id,
+              container_no: container.container_no || '',
+              container_size: container.container_size || '20',
+              date_of_arrival: container.date_of_arrival || null,
+            },
+            { transaction }
+          );
+        }
+      }
 
       // Add job update
       await JobUpdate.create(
@@ -264,6 +251,75 @@ class PipelineService {
     } catch (error) {
       await transaction.rollback();
       throw new Error(`Failed to create job: ${error.message}`);
+    }
+  }
+
+  // Update job
+  async updateJob(jobId, updateData, userId) {
+    const transaction = await PipelineJob.sequelize.transaction();
+
+    try {
+      // Find the job
+      const job = await PipelineJob.findByPk(jobId, { transaction });
+      if (!job) {
+        throw new Error("Job not found");
+      }
+
+      // Update pipeline job fields
+      
+      if (updateData.notification_email !== undefined) job.notification_email = updateData.notification_email;
+      
+      await job.save({ transaction });
+
+      // Update stage1 data
+      const stage1 = await Stage1Data.findOne({ where: { job_id: jobId }, transaction });
+      if (stage1) {
+        const stage1UpdateData = { ...updateData };
+
+        delete stage1UpdateData.notification_email;
+        delete stage1UpdateData.containers;
+
+        await stage1.update(stage1UpdateData, { transaction });
+      }
+
+      // Update containers if provided
+      if (updateData.containers && Array.isArray(updateData.containers)) {
+        // Delete existing containers
+        await Stage1Container.destroy({ where: { job_id: jobId }, transaction });
+
+        // Create new containers
+        for (const container of updateData.containers) {
+          await Stage1Container.create(
+            {
+              job_id: jobId,
+              container_no: container.container_no || '',
+              container_size: container.container_size || '20',
+              date_of_arrival: container.date_of_arrival || null,
+            },
+            { transaction }
+          );
+        }
+      }
+
+      // Add job update
+      await JobUpdate.create(
+        {
+          job_id: jobId,
+          user_id: userId,
+          stage: "stage1",
+          update_type: "data_update",
+          message: "Job data updated",
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
+
+      // Return the complete job with all data
+      return await this.getJobById(jobId);
+    } catch (error) {
+      await transaction.rollback();
+      throw new Error(`Failed to update job: ${error.message}`);
     }
   }
 
@@ -338,6 +394,7 @@ class PipelineService {
       );
 
       // Commit the transaction
+      // Commit the transaction first
       await transaction.commit();
       console.log("Transaction committed successfully");
 
@@ -350,11 +407,13 @@ class PipelineService {
         savedStage2 ? savedStage2.toJSON() : "Not found"
       );
 
-      // Return the complete job with all data
+      // Return the complete job with all data (after commit)
       return await this.getJobById(jobId);
     } catch (error) {
-      // Rollback transaction on error
-      await transaction.rollback();
+      // Rollback transaction on error (only if not committed)
+      if (transaction.finished !== 'commit') {
+        await transaction.rollback();
+      }
       console.error("Error in updateStage2Data:", error);
       throw new Error(`Failed to update stage 2 data: ${error.message}`);
     }
@@ -438,7 +497,10 @@ class PipelineService {
       await transaction.commit();
       return await this.getJobById(jobId);
     } catch (error) {
-      await transaction.rollback();
+      // Rollback transaction on error (only if not committed)
+      if (transaction.finished !== 'commit') {
+        await transaction.rollback();
+      }
       throw new Error(`Failed to update stage 3 data: ${error.message}`);
     }
   }
@@ -504,8 +566,24 @@ class PipelineService {
       await transaction.commit();
       return await this.getJobById(jobId);
     } catch (error) {
-      await transaction.rollback();
+      // Rollback transaction on error (only if not committed)
+      if (transaction.finished !== 'commit') {
+        await transaction.rollback();
+      }
       throw new Error(`Failed to update stage 4 data: ${error.message}`);
+    }
+  }
+
+  // Get jobs by current stage
+  async getJobsByCurrentStage(stage) {
+    try {
+      return await PipelineJob.findAll({
+        where: { current_stage: stage },
+        include: this.getJobIncludes(),
+        order: [["created_at", "DESC"]],
+      });
+    } catch (error) {
+      throw new Error(`Failed to fetch jobs by stage ${stage}: ${error.message}`);
     }
   }
 
@@ -522,44 +600,7 @@ class PipelineService {
     }
   }
 
-  // Get jobs by stage2 employee
-  async getJobsByStage2(userId) {
-    try {
-      return await PipelineJob.findAll({
-        where: { assigned_to_stage2: userId },
-        include: this.getJobIncludes(),
-        order: [["created_at", "DESC"]],
-      });
-    } catch (error) {
-      throw new Error(`Failed to fetch jobs by stage2: ${error.message}`);
-    }
-  }
 
-  // Get jobs by stage3 employee
-  async getJobsByStage3(userId) {
-    try {
-      return await PipelineJob.findAll({
-        where: { assigned_to_stage3: userId },
-        include: this.getJobIncludes(),
-        order: [["created_at", "DESC"]],
-      });
-    } catch (error) {
-      throw new Error(`Failed to fetch jobs by stage3: ${error.message}`);
-    }
-  }
-
-  // Get jobs by customer
-  async getJobsByCustomer(userId) {
-    try {
-      return await PipelineJob.findAll({
-        where: { customer_id: userId },
-        include: this.getJobIncludes(),
-        order: [["created_at", "DESC"]],
-      });
-    } catch (error) {
-      throw new Error(`Failed to fetch jobs by customer: ${error.message}`);
-    }
-  }
 
   // Helper method for job includes
 
@@ -568,21 +609,6 @@ class PipelineService {
       {
         model: User,
         as: "CreatedByUser",
-        attributes: ["username"],
-      },
-      {
-        model: User,
-        as: "Stage2User",
-        attributes: ["username"],
-      },
-      {
-        model: User,
-        as: "Stage3User",
-        attributes: ["username"],
-      },
-      {
-        model: User,
-        as: "Customer",
         attributes: ["username"],
       },
       {
