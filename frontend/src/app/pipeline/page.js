@@ -46,6 +46,7 @@ export default function PipelinePage() {
     ],
     notification_email: ''
   });
+  const [errors, setErrors] = useState({});
   const [consignees, setConsignees] = useState([]);
   const [lastConsigneeUpdate, setLastConsigneeUpdate] = useState(null);
 
@@ -289,9 +290,85 @@ export default function PipelinePage() {
       case 'job_no':
         if (!value.trim()) error = 'Job number is required';
         else if (value.length < 3) error = 'Job number must be at least 3 characters';
+        else if (!/^[A-Z0-9-]+$/.test(value)) error = 'Job number can only contain uppercase letters, numbers, and hyphens';
         break;
       case 'job_date':
-        if (value && new Date(value) > new Date()) error = 'Job date cannot be in the future';
+        if (!value) error = 'Job date is required';
+        else if (new Date(value) > new Date()) error = 'Job date cannot be in the future';
+        break;
+      case 'edi_job_no':
+        if (value && value.length < 2) error = 'EDI job number must be at least 2 characters';
+        break;
+      case 'edi_date':
+        if (value && new Date(value) > new Date()) error = 'EDI date cannot be in the future';
+        break;
+      case 'consignee':
+        if (!value.trim()) error = 'Consignee is required';
+        else if (value.length < 3) error = 'Consignee must be at least 3 characters';
+        break;
+      case 'shipper':
+        if (!value.trim()) error = 'Shipper is required';
+        else if (value.length < 3) error = 'Shipper must be at least 3 characters';
+        break;
+      case 'port_of_discharge':
+        if (!value.trim()) error = 'Port of discharge is required';
+        else if (value.length < 2) error = 'Port of discharge must be at least 2 characters';
+        break;
+      case 'final_place_of_delivery':
+        if (!value.trim()) error = 'Final place of delivery is required';
+        else if (value.length < 2) error = 'Final place of delivery must be at least 2 characters';
+        break;
+      case 'port_of_loading':
+        if (!value.trim()) error = 'Port of loading is required';
+        else if (value.length < 2) error = 'Port of loading must be at least 2 characters';
+        break;
+      case 'country_of_shipment':
+        if (!value.trim()) error = 'Country of shipment is required';
+        else if (value.length < 2) error = 'Country of shipment must be at least 2 characters';
+        break;
+      case 'hbl_no':
+        if (value && value.length < 2) error = 'HBL number must be at least 2 characters';
+        break;
+      case 'hbl_date':
+        if (value && new Date(value) > new Date()) error = 'HBL date cannot be in the future';
+        break;
+      case 'mbl_no':
+        if (value && value.length < 2) error = 'MBL number must be at least 2 characters';
+        break;
+      case 'mbl_date':
+        if (value && new Date(value) > new Date()) error = 'MBL date cannot be in the future';
+        break;
+      case 'shipping_line':
+        if (value && value.length < 2) error = 'Shipping line must be at least 2 characters';
+        break;
+      case 'forwarder':
+        if (value && value.length < 2) error = 'Forwarder must be at least 2 characters';
+        break;
+      case 'weight':
+        if (value < 0) error = 'Weight cannot be negative';
+        else if (value > 999999.99) error = 'Weight cannot exceed 999,999.99';
+        break;
+      case 'packages':
+        if (value < 0) error = 'Number of packages cannot be negative';
+        else if (value > 999999) error = 'Number of packages cannot exceed 999,999';
+        break;
+      case 'invoice_no':
+        if (value && value.length < 2) error = 'Invoice number must be at least 2 characters';
+        break;
+      case 'invoice_date':
+        if (value && new Date(value) > new Date()) error = 'Invoice date cannot be in the future';
+        break;
+      case 'gateway_igm':
+        if (value && value.length < 2) error = 'Gateway IGM must be at least 2 characters';
+        break;
+      case 'gateway_igm_date':
+        if (value && new Date(value) > new Date()) error = 'Gateway IGM date cannot be in the future';
+        break;
+      case 'local_igm':
+        if (value && value.length < 2) error = 'Local IGM must be at least 2 characters';
+        break;
+      case 'local_igm_date':
+        if (value && new Date(value) > new Date()) error = 'Local IGM date cannot be in the future';
         break;
       case 'commodity':
         if (value && value.length < 3) error = 'Commodity must be at least 3 characters';
@@ -319,6 +396,27 @@ export default function PipelinePage() {
     if (!formData.job_no.trim()) {
       newErrors.job_no = 'Job number is required';
     }
+    if (!formData.job_date) {
+      newErrors.job_date = 'Job date is required';
+    }
+    if (!formData.consignee.trim()) {
+      newErrors.consignee = 'Consignee is required';
+    }
+    if (!formData.shipper.trim()) {
+      newErrors.shipper = 'Shipper is required';
+    }
+    if (!formData.port_of_discharge.trim()) {
+      newErrors.port_of_discharge = 'Port of discharge is required';
+    }
+    if (!formData.final_place_of_delivery.trim()) {
+      newErrors.final_place_of_delivery = 'Final place of delivery is required';
+    }
+    if (!formData.port_of_loading.trim()) {
+      newErrors.port_of_loading = 'Port of loading is required';
+    }
+    if (!formData.country_of_shipment.trim()) {
+      newErrors.country_of_shipment = 'Country of shipment is required';
+    }
     
     // Validate all other fields
     Object.keys(formData).forEach(field => {
@@ -328,58 +426,87 @@ export default function PipelinePage() {
       }
     });
     
+    // Validate containers
+    if (formData.containers && formData.containers.length > 0) {
+      formData.containers.forEach((container, index) => {
+        if (container.container_no && container.container_no.length < 2) {
+          newErrors[`container_${index}_no`] = 'Container number must be at least 2 characters';
+        }
+        if (container.date_of_arrival && new Date(container.date_of_arrival) > new Date()) {
+          newErrors[`container_${index}_arrival`] = 'Date of arrival cannot be in the future';
+        }
+      });
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
+    let newValue = value;
     
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+    if (type === 'number') {
+      newValue = value === '' ? 0 : parseFloat(value);
     }
-    
-    // Fields that should be numbers
-    const numberFields = ['weight', 'packages'];
     
     setFormData(prev => ({
       ...prev,
-      [name]: numberFields.includes(name) ? (parseInt(value) || 0) : value
+      [name]: newValue
     }));
-      };
-
-    // Container management functions
-    const addContainer = () => {
-      const newContainer = {
-        container_no: '',
-        container_size: '20',
-        date_of_arrival: ''
-      };
-      
-      setFormData(prev => ({
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
         ...prev,
-        containers: [...(prev.containers || []), newContainer]
+        [name]: ''
       }));
-    };
+    }
+  };
 
-    const removeContainer = (index) => {
-      setFormData(prev => ({
-        ...prev,
-        containers: prev.containers.filter((_, i) => i !== index)
-      }));
+  const handleContainerChange = (index, field, value) => {
+    const newContainers = [...formData.containers];
+    newContainers[index] = {
+      ...newContainers[index],
+      [field]: value
     };
+    
+    setFormData(prev => ({
+      ...prev,
+      containers: newContainers
+    }));
+    
+    // Clear container-specific errors
+    if (errors[`container_${index}_${field}`]) {
+      setErrors(prev => ({
+        ...prev,
+        [`container_${index}_${field}`]: ''
+      }));
+    }
+  };
 
-    const handleContainerChange = (index, field, value) => {
-      setFormData(prev => ({
-        ...prev,
-        containers: prev.containers.map((container, i) => 
-          i === index ? { ...container, [field]: value } : container
-        )
-      }));
-    };
-  
-    // Helper function to render form field with error
+  const addContainer = () => {
+    setFormData(prev => ({
+      ...prev,
+      containers: [
+        ...prev.containers,
+        {
+          container_no: '',
+          container_size: '20',
+          date_of_arrival: ''
+        }
+      ]
+    }));
+  };
+
+  const removeContainer = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      containers: prev.containers.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Helper function to render form field with error
   const renderFormField = (name, label, type = 'text', required = false, placeholder = '', rows = null) => {
     const isError = errors[name];
     const inputClass = `w-full border rounded-md px-3 py-2 text-black ${
@@ -681,7 +808,6 @@ export default function PipelinePage() {
   const [isSubadmin, setIsSubadmin] = useState(false);
   
   // Validation states
-  const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -958,6 +1084,9 @@ export default function PipelinePage() {
                             onChange={(e) => handleContainerChange(index, 'container_no', e.target.value)}
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           />
+                          {errors[`container_${index}_no`] && (
+                            <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_no`]}</p>
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
@@ -981,6 +1110,9 @@ export default function PipelinePage() {
                             onChange={(e) => handleContainerChange(index, 'date_of_arrival', e.target.value)}
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           />
+                          {errors[`container_${index}_arrival`] && (
+                            <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_arrival`]}</p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1159,6 +1291,9 @@ export default function PipelinePage() {
                             onChange={(e) => handleContainerChange(index, 'container_no', e.target.value)}
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           />
+                          {errors[`container_${index}_no`] && (
+                            <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_no`]}</p>
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
@@ -1182,6 +1317,9 @@ export default function PipelinePage() {
                             onChange={(e) => handleContainerChange(index, 'date_of_arrival', e.target.value)}
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                           />
+                          {errors[`container_${index}_arrival`] && (
+                            <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_arrival`]}</p>
+                          )}
                         </div>
                       </div>
                     </div>

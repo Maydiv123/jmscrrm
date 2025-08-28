@@ -21,6 +21,8 @@ export default function Stage4Page() {
     acknowledge_date: '',
     acknowledge_name: ''
   });
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Check current user
@@ -33,6 +35,101 @@ export default function Stage4Page() {
     }
     fetchJobs();
   }, []);
+
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = '';
+    
+    switch (name) {
+      case 'bill_no':
+        if (!value.trim()) error = 'Bill number is required';
+        else if (value.length < 2) error = 'Bill number must be at least 2 characters';
+        break;
+      case 'bill_date':
+        if (!value) error = 'Bill date is required';
+        else if (new Date(value) > new Date()) error = 'Bill date cannot be in the future';
+        break;
+      case 'amount_taxable':
+        if (value < 0) error = 'Taxable amount cannot be negative';
+        else if (value > 999999.99) error = 'Taxable amount cannot exceed 999,999.99';
+        break;
+      case 'gst_5_percent':
+        if (value < 0) error = 'GST 5% cannot be negative';
+        else if (value > 999999.99) error = 'GST 5% cannot exceed 999,999.99';
+        break;
+      case 'gst_18_percent':
+        if (value < 0) error = 'GST 18% cannot be negative';
+        else if (value > 999999.99) error = 'GST 18% cannot exceed 999,999.99';
+        break;
+      case 'bill_mail':
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Please enter a valid email address';
+        break;
+      case 'bill_courier':
+        if (value && value.length < 2) error = 'Bill courier must be at least 2 characters';
+        break;
+      case 'courier_date':
+        if (value && new Date(value) > new Date()) error = 'Courier date cannot be in the future';
+        break;
+      case 'acknowledge_date':
+        if (value && new Date(value) > new Date()) error = 'Acknowledge date cannot be in the future';
+        break;
+      case 'acknowledge_name':
+        if (value && value.length < 2) error = 'Acknowledge name must be at least 2 characters';
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Validate required fields
+    if (!formData.bill_no.trim()) {
+      newErrors.bill_no = 'Bill number is required';
+    }
+    if (!formData.bill_date) {
+      newErrors.bill_date = 'Bill date is required';
+    }
+    if (!formData.amount_taxable || formData.amount_taxable <= 0) {
+      newErrors.amount_taxable = 'Taxable amount is required and must be greater than 0';
+    }
+    
+    // Validate all other fields
+    Object.keys(formData).forEach(field => {
+      if (formData[field] !== '' && formData[field] !== 0) {
+        const error = validateField(field, formData[field]);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type } = e.target;
+    let newValue = value;
+    
+    if (type === 'number') {
+      newValue = value === '' ? 0 : parseFloat(value);
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: newValue
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
 
   async function fetchJobs() {
     try {
@@ -99,16 +196,6 @@ export default function Stage4Page() {
     setShowUpdateModal(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type } = e.target;
-    const numberFields = ['amount_taxable', 'gst_5_percent', 'gst_18_percent'];
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: numberFields.includes(name) ? (parseFloat(value) || 0) : value
-    }));
-  };
-
   const fillTestData = () => {
     const testData = {
       bill_no: 'BILL2024001',
@@ -130,6 +217,12 @@ export default function Stage4Page() {
     e.preventDefault();
     if (!selectedJob) return;
 
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     console.log("Submitting stage4 data for job:", selectedJob.id);
     console.log("Form data:", formData);
 
@@ -148,6 +241,7 @@ export default function Stage4Page() {
         console.log("Success response:", responseData);
         setShowUpdateModal(false);
         setSelectedJob(null);
+        setErrors({});
         console.log("Refreshing jobs list...");
         await fetchJobs(); // Refresh the jobs list
         console.log("Jobs list refreshed");
@@ -160,6 +254,8 @@ export default function Stage4Page() {
     } catch (err) {
       console.error("Error updating stage 4 data:", err);
       alert("Error updating data");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -317,6 +413,7 @@ export default function Stage4Page() {
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       placeholder="Enter bill number"
                     />
+                    {errors.bill_no && <p className="text-red-500 text-xs mt-1">{errors.bill_no}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Bill Date</label>
@@ -327,6 +424,7 @@ export default function Stage4Page() {
                       onChange={handleInputChange}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     />
+                    {errors.bill_date && <p className="text-red-500 text-xs mt-1">{errors.bill_date}</p>}
                   </div>
                 </div>
 
@@ -344,6 +442,7 @@ export default function Stage4Page() {
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                         step="0.01"
                       />
+                      {errors.amount_taxable && <p className="text-red-500 text-xs mt-1">{errors.amount_taxable}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">GST 5%</label>
@@ -355,6 +454,7 @@ export default function Stage4Page() {
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                         step="0.01"
                       />
+                      {errors.gst_5_percent && <p className="text-red-500 text-xs mt-1">{errors.gst_5_percent}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">GST 18%</label>
@@ -366,6 +466,7 @@ export default function Stage4Page() {
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                         step="0.01"
                       />
+                      {errors.gst_18_percent && <p className="text-red-500 text-xs mt-1">{errors.gst_18_percent}</p>}
                     </div>
                   </div>
                   <div className="mt-4 p-3 bg-blue-50 rounded-md">
@@ -387,6 +488,7 @@ export default function Stage4Page() {
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       placeholder="Email address for bill"
                     />
+                    {errors.bill_mail && <p className="text-red-500 text-xs mt-1">{errors.bill_mail}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Bill Courier</label>
@@ -398,6 +500,7 @@ export default function Stage4Page() {
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       placeholder="Courier service used"
                     />
+                    {errors.bill_courier && <p className="text-red-500 text-xs mt-1">{errors.bill_courier}</p>}
                   </div>
                 </div>
 
@@ -410,6 +513,7 @@ export default function Stage4Page() {
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                   />
+                  {errors.courier_date && <p className="text-red-500 text-xs mt-1">{errors.courier_date}</p>}
                 </div>
 
                 {/* Acknowledgment */}
@@ -425,6 +529,7 @@ export default function Stage4Page() {
                         onChange={handleInputChange}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       />
+                      {errors.acknowledge_date && <p className="text-red-500 text-xs mt-1">{errors.acknowledge_date}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Acknowledged By</label>
@@ -436,6 +541,7 @@ export default function Stage4Page() {
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                         placeholder="Name of person acknowledging"
                       />
+                      {errors.acknowledge_name && <p className="text-red-500 text-xs mt-1">{errors.acknowledge_name}</p>}
                     </div>
                   </div>
                   {formData.acknowledge_date && (

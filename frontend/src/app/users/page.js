@@ -14,10 +14,74 @@ export default function UsersPage() {
     role: 'stage1_employee',
     is_admin: false
   });
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = '';
+    
+    switch (name) {
+      case 'username':
+        if (!value.trim()) error = 'Username is required';
+        else if (value.length < 3) error = 'Username must be at least 3 characters';
+        else if (!/^[a-zA-Z0-9_]+$/.test(value)) error = 'Username can only contain letters, numbers, and underscores';
+        break;
+      case 'password':
+        if (!value.trim()) error = 'Password is required';
+        else if (value.length < 6) error = 'Password must be at least 6 characters';
+        break;
+      case 'designation':
+        if (!value.trim()) error = 'Designation is required';
+        else if (value.length < 2) error = 'Designation must be at least 2 characters';
+        break;
+      case 'role':
+        if (!value) error = 'Role is required';
+        else if (!['admin', 'subadmin', 'stage1_employee', 'stage2_employee', 'stage3_employee', 'customer'].includes(value)) {
+          error = 'Invalid role selected';
+        }
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Validate all fields
+    Object.keys(formData).forEach(field => {
+      if (field !== 'is_admin') { // Skip checkbox validation
+        const error = validateField(field, formData[field]);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
 
   async function fetchUsers() {
     try {
@@ -42,16 +106,16 @@ export default function UsersPage() {
     }
   }
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
   const handleCreateUser = async (e) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/users", {
         method: "POST",
@@ -69,6 +133,7 @@ export default function UsersPage() {
           role: 'stage1_employee',
           is_admin: false
         });
+        setErrors({});
         fetchUsers(); // Refresh the list
         alert("User created successfully!");
       } else {
@@ -78,6 +143,8 @@ export default function UsersPage() {
     } catch (err) {
       console.error("Error creating user:", err);
       alert("Error creating user");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -273,8 +340,11 @@ export default function UsersPage() {
                       value={formData.username}
                       onChange={handleInputChange}
                       required
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className={`w-full border rounded-md px-3 py-2 ${
+                        errors.username ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
@@ -284,8 +354,11 @@ export default function UsersPage() {
                       value={formData.password}
                       onChange={handleInputChange}
                       required
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className={`w-full border rounded-md px-3 py-2 ${
+                        errors.password ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
@@ -294,8 +367,11 @@ export default function UsersPage() {
                       name="designation"
                       value={formData.designation}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className={`w-full border rounded-md px-3 py-2 ${
+                        errors.designation ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.designation && <p className="text-red-500 text-xs mt-1">{errors.designation}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
@@ -303,13 +379,19 @@ export default function UsersPage() {
                       name="role"
                       value={formData.role}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      className={`w-full border rounded-md px-3 py-2 ${
+                        errors.role ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     >
+                      <option value="">Select Role</option>
+                      <option value="admin">Administrator</option>
+                      <option value="subadmin">Sub-Administrator</option>
                       <option value="stage1_employee">Stage 1 Employee</option>
                       <option value="stage2_employee">Stage 2 Employee</option>
                       <option value="stage3_employee">Stage 3 Employee</option>
                       <option value="customer">Customer</option>
                     </select>
+                    {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
                   </div>
                   <div className="flex items-center">
                     <input
@@ -327,16 +409,22 @@ export default function UsersPage() {
                 <div className="flex justify-end gap-4 pt-6">
                   <button
                     type="button"
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setErrors({});
+                      setIsSubmitting(false);
+                    }}
                     className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Create User
+                    {isSubmitting ? 'Creating...' : 'Create User'}
                   </button>
                 </div>
               </form>

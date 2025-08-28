@@ -33,6 +33,8 @@ export default function Stage2Page() {
     local_igm: '',
     local_igm_date: ''
   });
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Check current user
@@ -45,6 +47,114 @@ export default function Stage2Page() {
     }
     fetchJobs();
   }, []);
+
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = '';
+    
+    switch (name) {
+      case 'hsn_code':
+        if (value && value.length < 2) error = 'HSN code must be at least 2 characters';
+        else if (value && !/^[0-9]+$/.test(value)) error = 'HSN code must contain only numbers';
+        break;
+      case 'filing_requirement':
+        if (value && value.length < 3) error = 'Filing requirement must be at least 3 characters';
+        break;
+      case 'checklist_sent_date':
+        if (value && new Date(value) > new Date()) error = 'Checklist sent date cannot be in the future';
+        break;
+      case 'approval_date':
+        if (value && new Date(value) > new Date()) error = 'Approval date cannot be in the future';
+        break;
+      case 'bill_of_entry_no':
+        if (value && value.length < 2) error = 'Bill of entry number must be at least 2 characters';
+        break;
+      case 'bill_of_entry_date':
+        if (value && new Date(value) > new Date()) error = 'Bill of entry date cannot be in the future';
+        break;
+      case 'debit_note':
+        if (value && value.length < 2) error = 'Debit note must be at least 2 characters';
+        break;
+      case 'debit_paid_by':
+        if (value && value.length < 2) error = 'Debit paid by must be at least 2 characters';
+        break;
+      case 'duty_amount':
+        if (value < 0) error = 'Duty amount cannot be negative';
+        else if (value > 999999.99) error = 'Duty amount cannot exceed 999,999.99';
+        break;
+      case 'duty_paid_by':
+        if (value && value.length < 2) error = 'Duty paid by must be at least 2 characters';
+        break;
+      case 'ocean_freight':
+        if (value < 0) error = 'Ocean freight cannot be negative';
+        else if (value > 999999.99) error = 'Ocean freight cannot exceed 999,999.99';
+        break;
+      case 'destination_charges':
+        if (value < 0) error = 'Destination charges cannot be negative';
+        else if (value > 999999.99) error = 'Destination charges cannot exceed 999,999.99';
+        break;
+      case 'original_doct_recd_date':
+        if (value && new Date(value) > new Date()) error = 'Original documents received date cannot be in the future';
+        break;
+      case 'drn_no':
+        if (value && value.length < 2) error = 'DRN number must be at least 2 characters';
+        break;
+      case 'irn_no':
+        if (value && value.length < 2) error = 'IRN number must be at least 2 characters';
+        break;
+      case 'documents_type':
+        if (value && value.length < 2) error = 'Documents type must be at least 2 characters';
+        break;
+      case 'invoice_no':
+        if (value && value.length < 2) error = 'Invoice number must be at least 2 characters';
+        break;
+      case 'gateway_igm':
+        if (value && value.length < 2) error = 'Gateway IGM must be at least 2 characters';
+        break;
+      case 'gateway_igm_date':
+        if (value && new Date(value) > new Date()) error = 'Gateway IGM date cannot be in the future';
+        break;
+      case 'local_igm':
+        if (value && value.length < 2) error = 'Local IGM must be at least 2 characters';
+        break;
+      case 'local_igm_date':
+        if (value && new Date(value) > new Date()) error = 'Local IGM date cannot be in the future';
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Validate required fields
+    if (!formData.hsn_code.trim()) {
+      newErrors.hsn_code = 'HSN code is required';
+    }
+    if (!formData.filing_requirement.trim()) {
+      newErrors.filing_requirement = 'Filing requirement is required';
+    }
+    if (!formData.bill_of_entry_no.trim()) {
+      newErrors.bill_of_entry_no = 'Bill of entry number is required';
+    }
+    if (!formData.duty_amount || formData.duty_amount <= 0) {
+      newErrors.duty_amount = 'Duty amount is required and must be greater than 0';
+    }
+    
+    // Validate all other fields
+    Object.keys(formData).forEach(field => {
+      if (formData[field] !== '' && formData[field] !== 0) {
+        const error = validateField(field, formData[field]);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   async function fetchJobs() {
     try {
@@ -167,10 +277,24 @@ export default function Stage2Page() {
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
+    let newValue = value;
+    
+    if (type === 'number') {
+      newValue = value === '' ? 0 : parseFloat(value);
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) || 0 : value
+      [name]: newValue
     }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
 
@@ -179,6 +303,12 @@ export default function Stage2Page() {
     e.preventDefault();
     if (!selectedJob) return;
 
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     console.log("Submitting stage2 data for job:", selectedJob.id);
     console.log("Form data:", formData);
 
@@ -197,6 +327,7 @@ export default function Stage2Page() {
         console.log("Success response:", responseData);
         setShowUpdateModal(false);
         setSelectedJob(null);
+        setErrors({});
         console.log("Refreshing jobs list...");
         await fetchJobs(); // Refresh the jobs list
         console.log("Jobs list refreshed");
@@ -209,6 +340,8 @@ export default function Stage2Page() {
     } catch (err) {
       console.error("Error updating stage 2 data:", err);
       alert("Error updating data");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -329,7 +462,11 @@ export default function Stage2Page() {
                   <p className="text-gray-600">Job No: {selectedJob.job_no}</p>
                 </div>
                 <button
-                  onClick={() => setShowUpdateModal(false)}
+                  onClick={() => {
+                    setShowUpdateModal(false);
+                    setErrors({});
+                    setIsSubmitting(false);
+                  }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   ×
@@ -357,8 +494,11 @@ export default function Stage2Page() {
                       name="hsn_code"
                       value={formData.hsn_code}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.hsn_code ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.hsn_code && <p className="text-red-500 text-xs mt-1">{errors.hsn_code}</p>}
                   </div>
 
                 </div>
@@ -369,9 +509,12 @@ export default function Stage2Page() {
                     name="filing_requirement"
                     value={formData.filing_requirement}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    className={`w-full border rounded-md px-3 py-2 text-black ${
+                      errors.filing_requirement ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     rows="3"
                   />
+                  {errors.filing_requirement && <p className="text-red-500 text-xs mt-1">{errors.filing_requirement}</p>}
                 </div>
 
                 {/* Checklist and Approval */}
@@ -383,8 +526,11 @@ export default function Stage2Page() {
                       name="checklist_sent_date"
                       value={formData.checklist_sent_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.checklist_sent_date ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.checklist_sent_date && <p className="text-red-500 text-xs mt-1">{errors.checklist_sent_date}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Approval Date</label>
@@ -393,8 +539,11 @@ export default function Stage2Page() {
                       name="approval_date"
                       value={formData.approval_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.approval_date ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.approval_date && <p className="text-red-500 text-xs mt-1">{errors.approval_date}</p>}
                   </div>
                 </div>
 
@@ -407,8 +556,11 @@ export default function Stage2Page() {
                       name="bill_of_entry_no"
                       value={formData.bill_of_entry_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.bill_of_entry_no ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.bill_of_entry_no && <p className="text-red-500 text-xs mt-1">{errors.bill_of_entry_no}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Bill of Entry Date</label>
@@ -417,8 +569,11 @@ export default function Stage2Page() {
                       name="bill_of_entry_date"
                       value={formData.bill_of_entry_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.bill_of_entry_date ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.bill_of_entry_date && <p className="text-red-500 text-xs mt-1">{errors.bill_of_entry_date}</p>}
                   </div>
                 </div>
 
@@ -431,8 +586,11 @@ export default function Stage2Page() {
                       name="debit_note"
                       value={formData.debit_note}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.debit_note ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.debit_note && <p className="text-red-500 text-xs mt-1">{errors.debit_note}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Debit Paid By</label>
@@ -441,8 +599,11 @@ export default function Stage2Page() {
                       name="debit_paid_by"
                       value={formData.debit_paid_by}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.debit_paid_by ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.debit_paid_by && <p className="text-red-500 text-xs mt-1">{errors.debit_paid_by}</p>}
                   </div>
                 </div>
 
@@ -450,14 +611,17 @@ export default function Stage2Page() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Duty Amount</label>
-                    <input
-                      type="number"
-                      name="duty_amount"
-                      value={formData.duty_amount}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      step="0.01"
-                    />
+                                          <input
+                        type="number"
+                        name="duty_amount"
+                        value={formData.duty_amount}
+                        onChange={handleInputChange}
+                        className={`w-full border rounded-md px-3 py-2 text-black ${
+                          errors.duty_amount ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        step="0.01"
+                      />
+                    {errors.duty_amount && <p className="text-red-500 text-xs mt-1">{errors.duty_amount}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Duty Paid By</label>
@@ -466,8 +630,11 @@ export default function Stage2Page() {
                       name="duty_paid_by"
                       value={formData.duty_paid_by}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.duty_paid_by ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.duty_paid_by && <p className="text-red-500 text-xs mt-1">{errors.duty_paid_by}</p>}
                   </div>
                 </div>
 
@@ -475,25 +642,31 @@ export default function Stage2Page() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Ocean Freight</label>
-                    <input
-                      type="number"
-                      name="ocean_freight"
-                      value={formData.ocean_freight}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      step="0.01"
-                    />
+                                          <input
+                        type="number"
+                        name="ocean_freight"
+                        value={formData.ocean_freight}
+                        onChange={handleInputChange}
+                        className={`w-full border rounded-md px-3 py-2 text-black ${
+                          errors.ocean_freight ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        step="0.01"
+                      />
+                    {errors.ocean_freight && <p className="text-red-500 text-xs mt-1">{errors.ocean_freight}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Destination Charges</label>
-                    <input
-                      type="number"
-                      name="destination_charges"
-                      value={formData.destination_charges}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                      step="0.01"
-                    />
+                                          <input
+                        type="number"
+                        name="destination_charges"
+                        value={formData.destination_charges}
+                        onChange={handleInputChange}
+                        className={`w-full border rounded-md px-3 py-2 text-black ${
+                          errors.destination_charges ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        step="0.01"
+                      />
+                    {errors.destination_charges && <p className="text-red-500 text-xs mt-1">{errors.destination_charges}</p>}
                   </div>
                 </div>
 
@@ -506,8 +679,11 @@ export default function Stage2Page() {
                       name="original_doct_recd_date"
                       value={formData.original_doct_recd_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.original_doct_recd_date ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.original_doct_recd_date && <p className="text-red-500 text-xs mt-1">{errors.original_doct_recd_date}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">DRN No.</label>
@@ -516,8 +692,11 @@ export default function Stage2Page() {
                       name="drn_no"
                       value={formData.drn_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.drn_no ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.drn_no && <p className="text-red-500 text-xs mt-1">{errors.drn_no}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">IRN No.</label>
@@ -526,8 +705,11 @@ export default function Stage2Page() {
                       name="irn_no"
                       value={formData.irn_no}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.irn_no ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.irn_no && <p className="text-red-500 text-xs mt-1">{errors.irn_no}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Documents Type</label>
@@ -536,8 +718,11 @@ export default function Stage2Page() {
                       name="documents_type"
                       value={formData.documents_type}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.documents_type ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.documents_type && <p className="text-red-500 text-xs mt-1">{errors.documents_type}</p>}
                   </div>
                 </div>
 
@@ -549,9 +734,12 @@ export default function Stage2Page() {
                     name="invoice_no"
                     value={formData.invoice_no}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                    className={`w-full border rounded-md px-3 py-2 text-black ${
+                      errors.invoice_no ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="Enter invoice number"
                   />
+                  {errors.invoice_no && <p className="text-red-500 text-xs mt-1">{errors.invoice_no}</p>}
                 </div>
 
                 {/* IGM Details */}
@@ -563,9 +751,12 @@ export default function Stage2Page() {
                       name="gateway_igm"
                       value={formData.gateway_igm}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.gateway_igm ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder="Enter gateway IGM"
                     />
+                    {errors.gateway_igm && <p className="text-red-500 text-xs mt-1">{errors.gateway_igm}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Gateway IGM Date</label>
@@ -574,8 +765,11 @@ export default function Stage2Page() {
                       name="gateway_igm_date"
                       value={formData.gateway_igm_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.gateway_igm_date ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.gateway_igm_date && <p className="text-red-500 text-xs mt-1">{errors.gateway_igm_date}</p>}
                   </div>
                 </div>
 
@@ -587,9 +781,12 @@ export default function Stage2Page() {
                       name="local_igm"
                       value={formData.local_igm}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.local_igm ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder="Enter local IGM"
                     />
+                    {errors.local_igm && <p className="text-red-500 text-xs mt-1">{errors.local_igm}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Local IGM Date</label>
@@ -598,8 +795,11 @@ export default function Stage2Page() {
                       name="local_igm_date"
                       value={formData.local_igm_date}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.local_igm_date ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.local_igm_date && <p className="text-red-500 text-xs mt-1">{errors.local_igm_date}</p>}
                   </div>
                 </div>
 
@@ -607,16 +807,26 @@ export default function Stage2Page() {
                   <div className="flex gap-4">
                     <button
                       type="button"
-                      onClick={() => setShowUpdateModal(false)}
+                      onClick={() => {
+                        setShowUpdateModal(false);
+                        setErrors({});
+                        setIsSubmitting(false);
+                      }}
                       className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                      disabled={isSubmitting}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className={`px-4 py-2 rounded-md text-white ${
+                        isSubmitting 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                      disabled={isSubmitting}
                     >
-                      Save Stage 2 Data
+                      {isSubmitting ? 'Saving...' : 'Save Stage 2 Data'}
                     </button>
                   </div>
                 </div>
