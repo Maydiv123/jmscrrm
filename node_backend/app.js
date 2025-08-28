@@ -12,6 +12,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const pipelineRoutes = require('./routes/pipelineRoutes');
+const consigneeRoutes = require('./routes/consigneeRoutes');
 
 const app = express();
 
@@ -84,6 +85,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/pipeline', pipelineRoutes);
+app.use('/api/consignees', consigneeRoutes);
 
 // Test endpoint with session check
 app.get('/api/test-session', (req, res) => {

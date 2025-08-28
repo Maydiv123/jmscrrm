@@ -33,6 +33,7 @@ const JobFileModel = require('./JobFile');
 const TaskModel = require('./Task');
 const TaskAssignmentModel = require('./TaskAssignment');
 const TaskUpdateModel = require('./TaskUpdate');
+const ConsigneeModel = require('./Consignee');
 
 // Initialize models
 const User = UserModel(sequelize);
@@ -48,6 +49,7 @@ const JobFile = JobFileModel(sequelize);
 const Task = TaskModel(sequelize);
 const TaskAssignment = TaskAssignmentModel(sequelize);
 const TaskUpdate = TaskUpdateModel(sequelize);
+const Consignee = ConsigneeModel(sequelize);
 
 // Define associations - CORRECTED based on Golang structure
 PipelineJob.hasOne(Stage1Data, { foreignKey: 'job_id', as: 'Stage1' });
@@ -138,5 +140,6 @@ module.exports = {
   JobFile,
   Task,
   TaskAssignment,
-  TaskUpdate
+  TaskUpdate,
+  Consignee
 };

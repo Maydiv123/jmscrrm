@@ -30,6 +30,7 @@ export default function Sidebar({ userRole, isAdmin }) {
     { name: "Users", href: "/users", icon: "👥" },
     { name: "Analytics", href: "/analytics", icon: "📈" },
     { name: "Reports", href: "/reports", icon: "📋" },
+    { name: "Consignee", href: "/consignee", icon: "🏢" },
   ];
 
   const subadminMenuItems = [
