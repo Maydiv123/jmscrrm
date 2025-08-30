@@ -580,8 +580,8 @@ export default function PipelinePage() {
           >
             {name === 'container_size' ? (
               <>
-                <option value="20">{"20'"}</option>
-                <option value="40">{"40'"}</option>
+                <option value="20">20&apos;</option>
+                <option value="40">40&apos;</option>
                 <option value="LCL">LCL</option>
               </>
             ) : null}
@@ -963,167 +963,167 @@ export default function PipelinePage() {
         </div>
       </div>
 
-      {/* Create Job Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Create New Pipeline Job</h2>
-                                 <button
-                   onClick={() => {
-                     setShowCreateModal(false);
-                     setErrors({});
-                     setIsSubmitting(false);
-                   }}
-                   className="text-gray-400 hover:text-gray-600"
-                 >
-                   ×
-                 </button>
-              </div>
-
-              <form onSubmit={handleCreateJob} className="space-y-6">
-                {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('job_no', 'Job No. *', 'text', true)}
-                  {renderFormField('job_date', 'Job Date', 'date')}
-                </div>
-
-                {/* EDI Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('edi_job_no', 'EDI Job No.')}
-                  {renderFormField('edi_date', 'EDI Date', 'date')}
-                </div>
-
-                {/* Parties */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('consignee', 'Consignee', 'select')}
-                  {renderFormField('shipper', 'Shipper', 'textarea')}
-                </div>
-
-                {/* Ports */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('port_of_discharge', 'Port of Discharge')}
-                  {renderFormField('final_place_of_delivery', 'Final Place of Delivery')}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('port_of_loading', 'Port of Loading')}
-                  {renderFormField('country_of_shipment', 'Country of Shipment')}
-                </div>
-
-                {/* Bill of Lading */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('hbl_no', 'HBL No.')}
-                  {renderFormField('hbl_date', 'HBL Date', 'date')}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('mbl_no', 'MBL No.')}
-                  {renderFormField('mbl_date', 'MBL Date', 'date')}
-                </div>
-
-                {/* Shipping Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('shipping_line', 'Shipping Line')}
-                  {renderFormField('forwarder', 'Forwarder')}
-                </div>
-
-                {/* Cargo Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('weight', 'Weight (KG)', 'text')}
-                  {renderFormField('packages', 'Packages', 'text')}
-                </div>
-
-                {/* Invoice Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('invoice_no', 'Invoice No.')}
-                  {renderFormField('invoice_date', 'Invoice Date', 'date')}
-                </div>
-
-                {/* Additional Details */}
-                {renderFormField('commodity', 'Commodity', 'textarea')}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderFormField('eta', 'ETA', 'date')}
-                  {renderFormField('current_status', 'Current Status')}
-                </div>
-
-                {/* Container Details */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-900">Container Details</h3>
-                    <button
-                      type="button"
-                      onClick={addContainer}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
-                    >
-                      <span>+</span> Add Container
-                    </button>
-                  </div>
-                  
-                  {formData.containers && formData.containers.map((container, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-medium text-gray-900">Container {index + 1}</h4>
-                        <button
-                          type="button"
-                          onClick={() => removeContainer(index)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Container No.</label>
-                          <input
-                            type="text"
-                            name={`container_no_${index}`}
-                            value={container.container_no}
-                            onChange={(e) => handleContainerChange(index, 'container_no', e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                          />
-                          {errors[`container_${index}_no`] && (
-                            <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_no`]}</p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
-                          <select
-                            name={`container_size_${index}`}
-                            value={container.container_size}
-                            onChange={(e) => handleContainerChange(index, 'container_size', e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
+                      {/* Create Job Modal */}
+                {showCreateModal && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+                      <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                          <h2 className="text-xl font-bold text-gray-900">Create New Pipeline Job</h2>
+                          <button
+                            onClick={() => {
+                              setShowCreateModal(false);
+                              setErrors({});
+                              setIsSubmitting(false);
+                            }}
+                            className="text-gray-400 hover:text-gray-600"
                           >
-                            <option value="20">{"20'"}</option>
-                            <option value="40">{"40'"}</option>
-                            <option value="LCL">LCL</option>
-                          </select>
+                            ×
+                          </button>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
-                          <input
-                            type="date"
-                            name={`container_date_of_arrival_${index}`}
-                            value={container.date_of_arrival}
-                            onChange={(e) => handleContainerChange(index, 'date_of_arrival', e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
-                          />
-                          {errors[`container_${index}_arrival`] && (
-                            <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_arrival`]}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {(!formData.containers || formData.containers.length === 0) && (
-                    <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                      <p>No containers added yet. Click "Add Container" to start.</p>
-                    </div>
-                  )}
-                </div>
+
+                        <form onSubmit={handleCreateJob} className="space-y-6">
+                          {/* Basic Information */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('job_no', 'Job No. *', 'text', true)}
+                            {renderFormField('job_date', 'Job Date', 'date')}
+                          </div>
+
+                          {/* EDI Information */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('edi_job_no', 'EDI Job No.')}
+                            {renderFormField('edi_date', 'EDI Date', 'date')}
+                          </div>
+
+                          {/* Parties */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('consignee', 'Consignee', 'select')}
+                            {renderFormField('shipper', 'Shipper', 'textarea')}
+                          </div>
+
+                          {/* Ports */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('port_of_discharge', 'Port of Discharge')}
+                            {renderFormField('final_place_of_delivery', 'Final Place of Delivery')}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('port_of_loading', 'Port of Loading')}
+                            {renderFormField('country_of_shipment', 'Country of Shipment')}
+                          </div>
+
+                          {/* Bill of Lading */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('hbl_no', 'HBL No.')}
+                            {renderFormField('hbl_date', 'HBL Date', 'date')}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('mbl_no', 'MBL No.')}
+                            {renderFormField('mbl_date', 'MBL Date', 'date')}
+                          </div>
+
+                          {/* Shipping Details */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('shipping_line', 'Shipping Line')}
+                            {renderFormField('forwarder', 'Forwarder')}
+                          </div>
+
+                          {/* Cargo Details */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('weight', 'Weight (KG)', 'text')}
+                            {renderFormField('packages', 'Packages', 'text')}
+                          </div>
+
+                          {/* Invoice Details */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('invoice_no', 'Invoice No.')}
+                            {renderFormField('invoice_date', 'Invoice Date', 'date')}
+                          </div>
+
+                          {/* Additional Details */}
+                          {renderFormField('commodity', 'Commodity', 'textarea')}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderFormField('eta', 'ETA', 'date')}
+                            {renderFormField('current_status', 'Current Status')}
+                          </div>
+
+                          {/* Container Details */}
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                              <h3 className="text-lg font-semibold text-gray-900">Container Details</h3>
+                              <button
+                                type="button"
+                                onClick={addContainer}
+                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
+                              >
+                                <span>+</span> Add Container
+                              </button>
+                            </div>
+                            
+                            {formData.containers && formData.containers.map((container, index) => (
+                              <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                <div className="flex justify-between items-center mb-3">
+                                  <h4 className="font-medium text-gray-900">Container {index + 1}</h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeContainer(index)}
+                                    className="text-red-600 hover:text-red-800 text-sm"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Container No.</label>
+                                    <input
+                                      type="text"
+                                      name={`container_no_${index}`}
+                                      value={container.container_no}
+                                      onChange={(e) => handleContainerChange(index, 'container_no', e.target.value)}
+                                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                                    />
+                                    {errors[`container_${index}_no`] && (
+                                      <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_no`]}</p>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Container Size</label>
+                                    <select
+                                      name={`container_size_${index}`}
+                                      value={container.container_size}
+                                      onChange={(e) => handleContainerChange(index, 'container_size', e.target.value)}
+                                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
+                                    >
+                                      <option value="20">20&apos;</option>
+                                      <option value="40">40&apos;</option>
+                                      <option value="LCL">LCL</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
+                                    <input
+                                      type="date"
+                                      name={`container_date_of_arrival_${index}`}
+                                      value={container.date_of_arrival}
+                                      onChange={(e) => handleContainerChange(index, 'date_of_arrival', e.target.value)}
+                                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
+                                    />
+                                    {errors[`container_${index}_arrival`] && (
+                                      <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_arrival`]}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            
+                            {(!formData.containers || formData.containers.length === 0) && (
+                              <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                                <p>No containers added yet. Click &quot;Add Container&quot; to start.</p>
+                              </div>
+                            )}
+                          </div>
 
                 {/* Notification Email */}
                 <div className="grid grid-cols-1 gap-4">
@@ -1303,8 +1303,8 @@ export default function PipelinePage() {
                             onChange={(e) => handleContainerChange(index, 'container_size', e.target.value)}
                             className="w-full border border-gray-300 rounded-md px-3 py-2 text-black" 
                           >
-                            <option value="20">{"20'"}</option>
-                            <option value="40">{"40'"}</option>
+                            <option value="20">20&apos;</option>
+                            <option value="40">40&apos;</option>
                             <option value="LCL">LCL</option>
                           </select>
                         </div>
@@ -1327,7 +1327,7 @@ export default function PipelinePage() {
                   
                   {(!formData.containers || formData.containers.length === 0) && (
                     <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                      <p>No containers added yet. Click "Add Container" to start.</p>
+                      <p>No containers added yet. Click &quot;Add Container&quot; to start.</p>
                     </div>
                   )}
                 </div>

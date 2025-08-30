@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -10,7 +10,46 @@ export default function LoginPage() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const router = useRouter();
+
+  // Check authentication on component mount
+  useEffect(() => {
+    checkAuthAndRedirect();
+  }, []);
+
+  async function checkAuthAndRedirect() {
+    try {
+      // Check if user data exists in localStorage
+      const userData = localStorage.getItem("user");
+      console.log("Raw localStorage user data:", userData, typeof userData);
+      
+      if (userData && userData !== "undefined" && userData !== "null") {
+        try {
+          const user = JSON.parse(userData);
+          console.log("Found existing user data:", user);
+          
+          if (user && user.is_admin) {
+            window.location.href = "/dashboard/admin";
+            return;
+          } else if (user && user.role) {
+            window.location.href = "/dashboard/employee";
+            return;
+          }
+        } catch (parseErr) {
+          console.error("Error parsing user data:", parseErr);
+          localStorage.removeItem("user"); // Clear invalid data
+        }
+      }
+      
+      // No user data in localStorage, show login form
+      setCheckingAuth(false);
+    } catch (err) {
+      console.error("Auth check error:", err);
+      // On error, show login form
+      setCheckingAuth(false);
+    }
+  }
 
   // Validation functions
   const validateField = (name, value) => {
@@ -85,10 +124,27 @@ export default function LoginPage() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
+                   if (res.ok) {
         const data = await res.json();
-        localStorage.setItem("user", JSON.stringify(data.user));
-        router.push("/dashboard");
+        console.log("Login response:", data);
+        
+        // Handle different response structures
+        const user = data.user || data;
+        if (!user) {
+          setLoginError("Invalid response from server");
+          return;
+        }
+        
+        localStorage.setItem("user", JSON.stringify(user));
+        
+        // Redirect based on user role
+        if (user.is_admin) {
+          router.push("/dashboard/admin");
+        } else if (user.role === 'subadmin') {
+          router.push("/dashboard/subadmin");
+        } else {
+          router.push("/dashboard/employee");
+        }
       } else {
         const errorData = await res.text();
         setLoginError(errorData || "Login failed");

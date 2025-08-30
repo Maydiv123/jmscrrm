@@ -675,8 +675,8 @@ export default function Stage3Page() {
                               errors[`container_${index}_size`] ? 'border-red-500' : 'border-gray-300'
                             }`}
                           >
-                            <option value="20">{"20'"}</option>
-                            <option value="40">{"40'"}</option>
+                            <option value="20">20&apos;</option>
+                            <option value="40">40&apos;</option>
                             <option value="LCL">LCL</option>
                           </select>
                           {errors[`container_${index}_size`] && <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_size`]}</p>}
