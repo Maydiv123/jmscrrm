@@ -168,67 +168,97 @@ class PipelineService {
     const transaction = await PipelineJob.sequelize.transaction();
 
     try {
+      console.log('Creating job with data:', JSON.stringify(stage1Data, null, 2));
+      
+      // Validate and convert data types
+      const validatedData = this.validateAndConvertStage1Data(stage1Data);
+      console.log('Validated data:', JSON.stringify(validatedData, null, 2));
+
       // Create pipeline job
+      console.log('Creating pipeline job with:', {
+        job_no: validatedData.job_no,
+        current_stage: "stage1",
+        status: "active",
+        created_by: createdBy,
+        assigned_to_stage2: validatedData.assigned_to_stage2 || null,
+        assigned_to_stage3: validatedData.assigned_to_stage3 || null,
+        customer_id: validatedData.customer_id || null,
+        notification_email: validatedData.notification_email || null,
+      });
+
       const job = await PipelineJob.create(
         {
-          job_no: stage1Data.job_no,
+          job_no: validatedData.job_no,
           current_stage: "stage1",
           status: "active",
           created_by: createdBy,
-
-          notification_email: stage1Data.notification_email || null,
+          assigned_to_stage2: validatedData.assigned_to_stage2 || null,
+          assigned_to_stage3: validatedData.assigned_to_stage3 || null,
+          customer_id: validatedData.customer_id || null,
+          notification_email: validatedData.notification_email || null,
         },
         { transaction }
       );
+
+      console.log('Pipeline job created with ID:', job.id);
 
       // Create stage1 data
-      await Stage1Data.create(
+      console.log('Creating stage1 data with job_id:', job.id);
+      const stage1Record = await Stage1Data.create(
         {
           job_id: job.id,
-          job_no: stage1Data.job_no,
-          job_date: stage1Data.job_date || null,
-          edi_job_no: stage1Data.edi_job_no || null,
-          edi_date: stage1Data.edi_date || null,
-          consignee: stage1Data.consignee || null,
-          shipper: stage1Data.shipper || null,
-          port_of_discharge: stage1Data.port_of_discharge || null,
-          final_place_of_delivery: stage1Data.final_place_of_delivery || null,
-          port_of_loading: stage1Data.port_of_loading || null,
-          country_of_shipment: stage1Data.country_of_shipment || null,
-          hbl_no: stage1Data.hbl_no || null,
-          hbl_date: stage1Data.hbl_date || null,
-          mbl_no: stage1Data.mbl_no || null,
-          mbl_date: stage1Data.mbl_date || null,
-          shipping_line: stage1Data.shipping_line || null,
-          forwarder: stage1Data.forwarder || null,
-          weight: stage1Data.weight || null,
-          packages: stage1Data.packages || null,
-          invoice_no: stage1Data.invoice_no || null,
-          invoice_date: stage1Data.invoice_date || null,
-          gateway_igm: stage1Data.gateway_igm || null,
-          gateway_igm_date: stage1Data.gateway_igm_date || null,
-          local_igm: stage1Data.local_igm || null,
-          local_igm_date: stage1Data.local_igm_date || null,
-          commodity: stage1Data.commodity || null,
-          eta: stage1Data.eta || null,
-          current_status: stage1Data.current_status || null,
-          // Remove single container fields as we'll use Stage1Container model
+          job_no: validatedData.job_no,
+          job_date: validatedData.job_date || null,
+          edi_job_no: validatedData.edi_job_no || null,
+          edi_date: validatedData.edi_date || null,
+          consignee: validatedData.consignee || null,
+          shipper: validatedData.shipper || null,
+          port_of_discharge: validatedData.port_of_discharge || null,
+          final_place_of_delivery: validatedData.final_place_of_delivery || null,
+          port_of_loading: validatedData.port_of_loading || null,
+          country_of_shipment: validatedData.country_of_shipment || null,
+          hbl_no: validatedData.hbl_no || null,
+          hbl_date: validatedData.hbl_date || null,
+          mbl_no: validatedData.mbl_no || null,
+          mbl_date: validatedData.mbl_date || null,
+          shipping_line: validatedData.shipping_line || null,
+          forwarder: validatedData.forwarder || null,
+          weight: validatedData.weight || null,
+          packages: validatedData.packages || null,
+          invoice_no: validatedData.invoice_no || null,
+          invoice_date: validatedData.invoice_date || null,
+          gateway_igm: validatedData.gateway_igm || null,
+          gateway_igm_date: validatedData.gateway_igm_date || null,
+          local_igm: validatedData.local_igm || null,
+          local_igm_date: validatedData.local_igm_date || null,
+          commodity: validatedData.commodity || null,
+          eta: validatedData.eta || null,
+          current_status: validatedData.current_status || null,
+          container_no: validatedData.container_no || null,
+          container_size: validatedData.container_size || null,
+          date_of_arrival: validatedData.date_of_arrival || null,
         },
         { transaction }
       );
 
+      console.log('Stage1 data created with ID:', stage1Record.id);
+
       // Create containers if provided
-      if (stage1Data.containers && Array.isArray(stage1Data.containers) && stage1Data.containers.length > 0) {
-        for (const container of stage1Data.containers) {
-          await Stage1Container.create(
-            {
-              job_id: job.id,
-              container_no: container.container_no || '',
-              container_size: container.container_size || '20',
-              date_of_arrival: container.date_of_arrival || null,
-            },
-            { transaction }
-          );
+      if (validatedData.containers && Array.isArray(validatedData.containers) && validatedData.containers.length > 0) {
+        console.log('Creating containers:', validatedData.containers.length);
+        for (const container of validatedData.containers) {
+          if (container && typeof container === 'object') {
+            console.log('Creating container:', container);
+            await Stage1Container.create(
+              {
+                job_id: job.id,
+                container_no: container.container_no || '',
+                container_size: container.container_size || '20',
+                date_of_arrival: container.date_of_arrival || null,
+              },
+              { transaction }
+            );
+          }
         }
       }
 
@@ -245,13 +275,93 @@ class PipelineService {
       );
 
       await transaction.commit();
+      console.log('Transaction committed successfully');
 
       // Return the complete job with all data
       return await this.getJobById(job.id);
     } catch (error) {
+      console.error('Error in createJob:', error);
+      console.error('Error stack:', error.stack);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        sqlState: error.sqlState,
+        sqlMessage: error.sqlMessage
+      });
       await transaction.rollback();
       throw new Error(`Failed to create job: ${error.message}`);
     }
+  }
+
+  // Helper method to validate and convert stage1 data types
+  validateAndConvertStage1Data(data) {
+    const validated = { ...data };
+
+    // Convert string numbers to actual numbers
+    if (typeof validated.weight === 'string' && validated.weight !== '') {
+      const weight = parseFloat(validated.weight);
+      if (isNaN(weight)) {
+        throw new Error('Invalid weight value. Must be a valid number.');
+      }
+      validated.weight = weight;
+    }
+
+    if (typeof validated.packages === 'string' && validated.packages !== '') {
+      const packages = parseInt(validated.packages);
+      if (isNaN(packages)) {
+        throw new Error('Invalid packages value. Must be a valid integer.');
+      }
+      validated.packages = packages;
+    }
+
+    if (typeof validated.assigned_to_stage2 === 'string' && validated.assigned_to_stage2 !== '') {
+      const assignedToStage2 = parseInt(validated.assigned_to_stage2);
+      if (isNaN(assignedToStage2)) {
+        throw new Error('Invalid assigned_to_stage2 value. Must be a valid integer.');
+      }
+      validated.assigned_to_stage2 = assignedToStage2;
+    }
+
+    if (typeof validated.assigned_to_stage3 === 'string' && validated.assigned_to_stage3 !== '') {
+      const assignedToStage3 = parseInt(validated.assigned_to_stage3);
+      if (isNaN(assignedToStage3)) {
+        throw new Error('Invalid assigned_to_stage3 value. Must be a valid integer.');
+      }
+      validated.assigned_to_stage3 = assignedToStage3;
+    }
+
+    if (typeof validated.customer_id === 'string' && validated.customer_id !== '') {
+      const customerId = parseInt(validated.customer_id);
+      if (isNaN(customerId)) {
+        throw new Error('Invalid customer_id value. Must be a valid integer.');
+      }
+      validated.customer_id = customerId;
+    }
+
+    // Validate required fields
+    if (!validated.job_no || validated.job_no.trim() === '') {
+      throw new Error('Job number is required');
+    }
+
+    // Convert empty strings to null for optional fields
+    if (validated.weight === '') validated.weight = null;
+    if (validated.packages === '') validated.packages = null;
+    if (validated.assigned_to_stage2 === '') validated.assigned_to_stage2 = null;
+    if (validated.assigned_to_stage3 === '') validated.assigned_to_stage3 = null;
+    if (validated.customer_id === '') validated.customer_id = null;
+
+    // Handle containers array validation
+    if (validated.containers && Array.isArray(validated.containers)) {
+      validated.containers = validated.containers.filter(container => 
+        container && typeof container === 'object'
+      );
+    }
+
+    // Log the final validated data for debugging
+    console.log('Final validated data:', JSON.stringify(validated, null, 2));
+
+    return validated;
   }
 
   // Update job

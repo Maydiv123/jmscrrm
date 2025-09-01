@@ -108,6 +108,10 @@ class PipelineController {
         return res.status(403).json({ error: "Access denied. Only admin, subadmin, and stage1 employees can create pipelines." });
       }
 
+      console.log('CreateJob request body:', JSON.stringify(req.body, null, 2));
+      console.log('User ID:', req.session.userId);
+      console.log('User role:', req.user.role);
+
       const job = await pipelineService.createJob(req.body, req.session.userId);
 
       // Send notification (async - don't wait for it to complete)
@@ -117,9 +121,16 @@ class PipelineController {
 
       res.status(201).json(job);
     } catch (error) {
+      console.error('CreateJob error:', error);
+      
       if (error.message.includes("Duplicate")) {
         return res.status(409).json({ error: "Job number already exists" });
       }
+      
+      if (error.message.includes("Invalid") || error.message.includes("required")) {
+        return res.status(400).json({ error: error.message });
+      }
+      
       res.status(500).json({ error: error.message });
     }
   }

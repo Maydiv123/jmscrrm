@@ -79,19 +79,31 @@ export default function Stage2Page() {
         if (value && value.length < 2) error = 'Debit paid by must be at least 2 characters';
         break;
       case 'duty_amount':
-        if (value < 0) error = 'Duty amount cannot be negative';
-        else if (value > 999999.99) error = 'Duty amount cannot exceed 999,999.99';
+        if (value && value !== '') {
+          const numValue = parseFloat(value);
+          if (isNaN(numValue)) error = 'Duty amount must be a valid number';
+          else if (numValue < 0) error = 'Duty amount cannot be negative';
+          else if (numValue > 999999.99) error = 'Duty amount cannot exceed 999,999.99';
+        }
         break;
       case 'duty_paid_by':
         if (value && value.length < 2) error = 'Duty paid by must be at least 2 characters';
         break;
       case 'ocean_freight':
-        if (value < 0) error = 'Ocean freight cannot be negative';
-        else if (value > 999999.99) error = 'Ocean freight cannot exceed 999,999.99';
+        if (value && value !== '') {
+          const numValue = parseFloat(value);
+          if (isNaN(numValue)) error = 'Ocean freight must be a valid number';
+          else if (numValue < 0) error = 'Ocean freight cannot be negative';
+          else if (numValue > 999999.99) error = 'Ocean freight cannot exceed 999,999.99';
+        }
         break;
       case 'destination_charges':
-        if (value < 0) error = 'Destination charges cannot be negative';
-        else if (value > 999999.99) error = 'Destination charges cannot exceed 999,999.99';
+        if (value && value !== '') {
+          const numValue = parseFloat(value);
+          if (isNaN(numValue)) error = 'Destination charges must be a valid number';
+          else if (numValue < 0) error = 'Destination charges cannot be negative';
+          else if (numValue > 999999.99) error = 'Destination charges cannot exceed 999,999.99';
+        }
         break;
       case 'original_doct_recd_date':
         if (value && new Date(value) > new Date()) error = 'Original documents received date cannot be in the future';
@@ -610,17 +622,17 @@ export default function Stage2Page() {
                 {/* Duty Amount */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Duty Amount</label>
-                                          <input
-                        type="number"
-                        name="duty_amount"
-                        value={formData.duty_amount}
-                        onChange={handleInputChange}
-                        className={`w-full border rounded-md px-3 py-2 text-black ${
-                          errors.duty_amount ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        step="0.01"
-                      />
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Duty Amount</label>
+                    <input
+                      type="text"
+                      name="duty_amount"
+                      value={formData.duty_amount}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.duty_amount ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter amount"
+                    />
                     {errors.duty_amount && <p className="text-red-500 text-xs mt-1">{errors.duty_amount}</p>}
                   </div>
                   <div>
@@ -641,31 +653,31 @@ export default function Stage2Page() {
                 {/* Freight and Charges */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ocean Freight</label>
-                                          <input
-                        type="number"
-                        name="ocean_freight"
-                        value={formData.ocean_freight}
-                        onChange={handleInputChange}
-                        className={`w-full border rounded-md px-3 py-2 text-black ${
-                          errors.ocean_freight ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        step="0.01"
-                      />
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Ocean Freight</label>
+                    <input
+                      type="text"
+                      name="ocean_freight"
+                      value={formData.ocean_freight}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.ocean_freight ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter amount"
+                    />
                     {errors.ocean_freight && <p className="text-red-500 text-xs mt-1">{errors.ocean_freight}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Destination Charges</label>
-                                          <input
-                        type="number"
-                        name="destination_charges"
-                        value={formData.destination_charges}
-                        onChange={handleInputChange}
-                        className={`w-full border rounded-md px-3 py-2 text-black ${
-                          errors.destination_charges ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        step="0.01"
-                      />
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Destination Charges</label>
+                    <input
+                      type="text"
+                      name="destination_charges"
+                      value={formData.destination_charges}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.destination_charges ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter amount"
+                    />
                     {errors.destination_charges && <p className="text-red-500 text-xs mt-1">{errors.destination_charges}</p>}
                   </div>
                 </div>
