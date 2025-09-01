@@ -7,6 +7,9 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -14,8 +17,17 @@ export default function UsersPage() {
     role: 'stage1_employee',
     is_admin: false
   });
+  const [editFormData, setEditFormData] = useState({
+    username: '',
+    password: '',
+    designation: '',
+    role: 'stage1_employee',
+    is_admin: false
+  });
   const [errors, setErrors] = useState({});
+  const [editErrors, setEditErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -67,6 +79,27 @@ export default function UsersPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateEditForm = () => {
+    const newErrors = {};
+    
+    // Validate all fields except password (optional in edit)
+    Object.keys(editFormData).forEach(field => {
+      if (field !== 'is_admin' && field !== 'password') { // Skip checkbox and password validation
+        const error = validateField(field, editFormData[field]);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    // Validate password only if it's provided
+    if (editFormData.password && editFormData.password.trim() !== '') {
+      const passwordError = validateField('password', editFormData.password);
+      if (passwordError) newErrors.password = passwordError;
+    }
+    
+    setEditErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -81,6 +114,40 @@ export default function UsersPage() {
         [name]: ''
       }));
     }
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    
+    // Clear error when user starts typing
+    if (editErrors[name]) {
+      setEditErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setEditFormData({
+      username: user.username,
+      password: '',
+      designation: user.designation || '',
+      role: user.role,
+      is_admin: user.is_admin
+    });
+    setEditErrors({});
+    setShowEditModal(true);
+  };
+
+  const handleDeleteUser = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
   };
 
   async function fetchUsers() {
@@ -145,6 +212,75 @@ export default function UsersPage() {
       alert("Error creating user");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateEditForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + `/api/users/${selectedUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(editFormData)
+      });
+
+      if (res.ok) {
+        setShowEditModal(false);
+        setSelectedUser(null);
+        setEditFormData({
+          username: '',
+          password: '',
+          designation: '',
+          role: 'stage1_employee',
+          is_admin: false
+        });
+        setEditErrors({});
+        fetchUsers(); // Refresh the list
+        alert("User updated successfully!");
+      } else {
+        const errorData = await res.text();
+        alert("Error updating user: " + errorData);
+      }
+    } catch (err) {
+      console.error("Error updating user:", err);
+      alert("Error updating user");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteUserConfirm = async () => {
+    setIsDeleting(true);
+    
+    try {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + `/api/users/${selectedUser.id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+
+      if (res.ok) {
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        fetchUsers(); // Refresh the list
+        alert("User deleted successfully!");
+      } else {
+        const errorData = await res.text();
+        alert("Error deleting user: " + errorData);
+      }
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      alert("Error deleting user");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -312,8 +448,18 @@ export default function UsersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                        <button className="text-red-600 hover:text-red-900">Delete</button>
+                        <button 
+                          onClick={() => handleEditUser(user)}
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteUser(user)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -428,6 +574,150 @@ export default function UsersPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit User: {selectedUser.username}</h3>
+              <form onSubmit={handleUpdateUser}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={editFormData.username}
+                      onChange={handleEditInputChange}
+                      required
+                      className={`w-full border rounded-md px-3 py-2 ${
+                        editErrors.username ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {editErrors.username && <p className="text-red-500 text-xs mt-1">{editErrors.username}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Password (leave blank to keep current)</label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={editFormData.password}
+                      onChange={handleEditInputChange}
+                      className={`w-full border rounded-md px-3 py-2 ${
+                        editErrors.password ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {editErrors.password && <p className="text-red-500 text-xs mt-1">{editErrors.password}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
+                    <input
+                      type="text"
+                      name="designation"
+                      value={editFormData.designation}
+                      onChange={handleEditInputChange}
+                      className={`w-full border rounded-md px-3 py-2 ${
+                        editErrors.designation ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {editErrors.designation && <p className="text-red-500 text-xs mt-1">{editErrors.designation}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select
+                      name="role"
+                      value={editFormData.role}
+                      onChange={handleEditInputChange}
+                      className={`w-full border rounded-md px-3 py-2 ${
+                        editErrors.role ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select Role</option>
+                      <option value="admin">Administrator</option>
+                      <option value="subadmin">Sub-Administrator</option>
+                      <option value="stage1_employee">Stage 1 Employee</option>
+                      <option value="stage2_employee">Stage 2 Employee</option>
+                      <option value="stage3_employee">Stage 3 Employee</option>
+                      <option value="customer">Customer</option>
+                    </select>
+                    {editErrors.role && <p className="text-red-500 text-xs mt-1">{editErrors.role}</p>}
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="is_admin"
+                      checked={editFormData.is_admin}
+                      onChange={handleEditInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label className="ml-2 block text-sm text-gray-900">
+                      Admin privileges
+                    </label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-4 pt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setSelectedUser(null);
+                      setEditErrors({});
+                      setIsSubmitting(false);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Updating...' : 'Update User'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Modal */}
+      {showDeleteModal && selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Delete User</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete user <strong>{selectedUser.username}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setSelectedUser(null);
+                    setIsDeleting(false);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteUserConfirm}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete User'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
