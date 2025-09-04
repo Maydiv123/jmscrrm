@@ -12,6 +12,63 @@ const {
 } = require("../models");
 
 class PipelineService {
+  // Validate and convert stage 1 data types
+  validateAndConvertStage1Data(data) {
+    if (!data) {
+      throw new Error('No data provided for stage 1');
+    }
+
+    // Ensure job_no is provided
+    if (!data.job_no) {
+      throw new Error('Job number is required');
+    }
+
+    // Convert date strings to Date objects if they exist
+    const dateFields = [
+      'job_date', 'edi_date', 'hbl_date', 'mbl_date', 
+      'invoice_date', 'gateway_igm_date', 'local_igm_date',
+      'eta', 'date_of_arrival'
+    ];
+
+    const result = { ...data };
+
+    // Convert date strings to Date objects
+    dateFields.forEach(field => {
+      if (data[field]) {
+        try {
+          result[field] = new Date(data[field]);
+        } catch (error) {
+          console.warn(`Invalid date format for ${field}:`, data[field]);
+          result[field] = null;
+        }
+      }
+    });
+
+    // Ensure numeric fields are numbers
+    const numericFields = ['weight', 'packages'];
+    numericFields.forEach(field => {
+      if (data[field] !== undefined && data[field] !== null) {
+        const num = Number(data[field]);
+        if (!isNaN(num)) {
+          result[field] = num;
+        } else {
+          console.warn(`Invalid number for ${field}:`, data[field]);
+          result[field] = null;
+        }
+      }
+    });
+
+    // Process containers if they exist
+    if (data.containers && Array.isArray(data.containers)) {
+      result.containers = data.containers.map(container => ({
+        container_no: container.container_no || '',
+        container_size: container.container_size || '20',
+        date_of_arrival: container.date_of_arrival ? new Date(container.date_of_arrival) : null
+      }));
+    }
+
+    return result;
+  }
   // Get all jobs with related data
   async getAllJobs() {
     try {
@@ -174,10 +231,10 @@ class PipelineService {
       const validatedData = this.validateAndConvertStage1Data(stage1Data);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
 
-      // Create pipeline job
+      // Create pipeline job directly in stage2
       console.log('Creating pipeline job with:', {
         job_no: validatedData.job_no,
-        current_stage: "stage1",
+        current_stage: "stage2", // Create directly in stage2
         status: "active",
         created_by: createdBy,
         assigned_to_stage2: validatedData.assigned_to_stage2 || null,
@@ -186,10 +243,11 @@ class PipelineService {
         notification_email: validatedData.notification_email || null,
       });
 
+      // Create the job in stage2
       const job = await PipelineJob.create(
         {
           job_no: validatedData.job_no,
-          current_stage: "stage1",
+          current_stage: "stage2",
           status: "active",
           created_by: createdBy,
           assigned_to_stage2: validatedData.assigned_to_stage2 || null,
@@ -199,6 +257,8 @@ class PipelineService {
         },
         { transaction }
       );
+      
+      console.log('Job created in stage2 with ID:', job.id);
 
       console.log('Pipeline job created with ID:', job.id);
 
@@ -464,17 +524,16 @@ class PipelineService {
         );
       }
 
-      // Update job stage if needed
+      // Update job stage to stage3 automatically after data is saved
       const job = await PipelineJob.findByPk(jobId, { transaction });
       console.log("Current job stage:", job.current_stage);
       
       const previousStage = job.current_stage;
-      let newStage = "stage2";
+      let newStage = "stage3";
 
-      if (job.current_stage === "stage1") {
-        await job.update({ current_stage: "stage2" }, { transaction });
-        console.log("Updated job stage to stage2");
-      }
+      // Always move to stage3 when stage2 data is saved
+      await job.update({ current_stage: "stage3" }, { transaction });
+      console.log("Updated job stage to stage3");
 
       // Get stage history (last 2 stages)
       const stageHistory = await JobUpdate.findAll({
@@ -490,8 +549,10 @@ class PipelineService {
           job_id: jobId,
           user_id: userId,
           stage: "stage2",
-          update_type: "stage_change",
-          message: `Stage changed from ${previousStage} to ${newStage}`,
+          update_type: "stage_completion",
+          message: `Stage 2 completed - Automatically moved to Stage 3`,
+          old_value: previousStage,
+          new_value: "stage3",
           previous_stage: previousStage,
           stage_history: stageHistory.map(update => ({
             stage: update.stage,
@@ -524,26 +585,54 @@ class PipelineService {
       if (transaction.finished !== 'commit') {
         await transaction.rollback();
       }
-      console.error("Error in updateStage2Data:", error);
-      throw new Error(`Failed to update stage 2 data: ${error.message}`);
+      throw error;
     }
   }
+
+  // Update stage3 data
   async updateStage3Data(jobId, stage3Data, userId) {
     const transaction = await PipelineJob.sequelize.transaction();
 
     try {
+      // Prepare data with proper type conversion
+      const processedData = {
+        ...stage3Data,
+        // Convert string numbers to float for monetary values
+        clearance_exps: stage3Data.clearance_exps ? parseFloat(stage3Data.clearance_exps) : null,
+        stamp_duty: stage3Data.stamp_duty ? parseFloat(stage3Data.stamp_duty) : null,
+        offloading_charges: stage3Data.offloading_charges ? parseFloat(stage3Data.offloading_charges) : null,
+        transport_detention: stage3Data.transport_detention ? parseFloat(stage3Data.transport_detention) : null,
+        // Convert date strings to Date objects
+        exam_date: stage3Data.exam_date ? new Date(stage3Data.exam_date) : null,
+        out_of_charge: stage3Data.out_of_charge ? new Date(stage3Data.out_of_charge) : null
+      };
+
+      // Validate numeric fields
+      const numericFields = [
+        'clearance_exps', 
+        'stamp_duty', 
+        'offloading_charges', 
+        'transport_detention'
+      ];
+
+      for (const field of numericFields) {
+        if (processedData[field] !== null && isNaN(processedData[field])) {
+          throw new Error(`Invalid value for ${field}: ${stage3Data[field]}`);
+        }
+      }
+
       // Find or create stage3 data
       const [stage3, created] = await Stage3Data.findOrCreate({
         where: { job_id: jobId },
         defaults: {
           job_id: jobId,
-          ...stage3Data,
+          ...processedData,
         },
         transaction,
       });
 
       if (!created) {
-        await stage3.update(stage3Data, { transaction });
+        await stage3.update(processedData, { transaction });
       }
 
       // Delete existing containers and add new ones
@@ -568,14 +657,25 @@ class PipelineService {
         }
       }
 
-      // Update job stage if needed
+      // Update job stage
       const job = await PipelineJob.findByPk(jobId, { transaction });
       const previousStage = job.current_stage;
-      let newStage = "stage3";
       
-      if (job.current_stage === "stage1" || job.current_stage === "stage2") {
-        await job.update({ current_stage: "stage3" }, { transaction });
-      }
+      // If stage3 data is being entered, move to stage4 (customer stage)
+      const newStage = "stage4";
+      await job.update({ current_stage: newStage }, { transaction });
+      
+      // Create empty stage4 data record for the customer
+      await Stage4Data.findOrCreate({
+        where: { job_id: jobId },
+        defaults: {
+          job_id: jobId,
+          // Initialize with empty values or default values as needed
+          acknowledge_date: null,
+          // Add other stage4 fields with default values if needed
+        },
+        transaction,
+      });
 
       // Get stage history (last 2 stages)
       const stageHistory = await JobUpdate.findAll({

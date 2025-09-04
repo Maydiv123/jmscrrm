@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation';
 import Sidebar from "../components/Sidebar";
 
 export default function PipelinePage() {
@@ -809,6 +810,7 @@ export default function PipelinePage() {
   
   // Validation states
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // Get user info from localStorage
@@ -939,7 +941,7 @@ export default function PipelinePage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => window.location.href = `/pipeline/jobs/${job.id}`}
+                          onClick={() => router.push(`/pipeline/jobs/${job.id}`)}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           View Details

@@ -47,8 +47,8 @@ class PipelineController {
       let jobs;
       switch (req.user.role) {
         case "stage1_employee":
-          // Stage 1 employees see jobs they created (stage1)
-          jobs = await pipelineService.getJobsByCreator(userId);
+          // Stage 1 employees see all jobs in stage1
+          jobs = await pipelineService.getJobsByCurrentStage("stage1");
           break;
         case "stage2_employee":
           // Stage 2 employees see only jobs currently in stage2
