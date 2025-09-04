@@ -255,26 +255,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center mb-3">Demo Credentials:</p>
-            <div className="space-y-2 text-xs">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="font-medium text-gray-700">Admin User:</p>
-                <p className="text-gray-600">Username: admin | Password: 123456</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="font-medium text-gray-700">Employee User:</p>
-                <p className="text-gray-600">Username: ravindra | Password: 123456</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-500">
-            © 2024 MayDiv CRM. All rights reserved.
+            2024 MayDiv CRM. All rights reserved.
           </p>
         </div>
       </div>

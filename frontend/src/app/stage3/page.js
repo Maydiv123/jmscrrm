@@ -10,13 +10,15 @@ export default function Stage3Page() {
   const [userRole, setUserRole] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({
+    edi_job_no: '',
+    edi_date: '',
     exam_date: '',
     out_of_charge: '',
-    clearance_exps: 0,
-    stamp_duty: 0,
+    clearance_exps: '',
+    stamp_duty: '',
     custodian: '',
-    offloading_charges: 0,
-    transport_detention: 0,
+    offloading_charges: '',
+    transport_detention: '',
     dispatch_info: '',
     containers: [
       {
@@ -135,7 +137,7 @@ export default function Stage3Page() {
     let newValue = value;
     
     if (type === 'number') {
-      newValue = value === '' ? 0 : parseFloat(value);
+      newValue = value === '' ? '' : parseFloat(value);
     }
     
     setFormData(prev => ({
@@ -234,85 +236,50 @@ export default function Stage3Page() {
     // Pre-fill form with existing stage3 data if available
     if (job.stage3) {
       setFormData({
+        edi_job_no: job.stage3.edi_job_no || '',
+        edi_date: job.stage3.edi_date ? job.stage3.edi_date.split('T')[0] : '',
         exam_date: job.stage3.exam_date ? job.stage3.exam_date.split('T')[0] : '',
         out_of_charge: job.stage3.out_of_charge ? job.stage3.out_of_charge.split('T')[0] : '',
-        clearance_exps: job.stage3.clearance_exps || 0,
-        stamp_duty: job.stage3.stamp_duty || 0,
+        clearance_exps: job.stage3.clearance_exps || '',
+        stamp_duty: job.stage3.stamp_duty || '',
         custodian: job.stage3.custodian || '',
-        offloading_charges: job.stage3.offloading_charges || 0,
-        transport_detention: job.stage3.transport_detention || 0,
+        offloading_charges: job.stage3.offloading_charges || '',
+        transport_detention: job.stage3.transport_detention || '',
         dispatch_info: job.stage3.dispatch_info || '',
-        containers: job.stage3.containers && job.stage3.containers.length > 0 ? 
-          job.stage3.containers.map(container => ({
-            container_no: container.container_no || '',
-            size: container.size || '',
-            vehicle_no: container.vehicle_no || '',
-            date_of_offloading: container.date_of_offloading ? container.date_of_offloading.split('T')[0] : '',
-            empty_return_date: container.empty_return_date ? container.empty_return_date.split('T')[0] : ''
-          })) : [
-            {
+        containers: job.stage3.containers && job.stage3.containers.length > 0 
+          ? job.stage3.containers 
+          : [{
               container_no: '',
               size: '',
               vehicle_no: '',
               date_of_offloading: '',
               empty_return_date: ''
-            }
-          ]
+            }]
       });
     } else {
-      // Reset form for new entry
+      // Reset form with empty values
       setFormData({
+        edi_job_no: '',
+        edi_date: '',
         exam_date: '',
         out_of_charge: '',
-        clearance_exps: 0,
-        stamp_duty: 0,
+        clearance_exps: '',
+        stamp_duty: '',
         custodian: '',
-        offloading_charges: 0,
-        transport_detention: 0,
+        offloading_charges: '',
+        transport_detention: '',
         dispatch_info: '',
-        containers: [
-          {
-            container_no: '',
-            size: '',
-            vehicle_no: '',
-            date_of_offloading: '',
-            empty_return_date: ''
-          }
-        ]
+        containers: [{
+          container_no: '',
+          size: '',
+          vehicle_no: '',
+          date_of_offloading: '',
+          empty_return_date: ''
+        }]
       });
     }
+    
     setShowUpdateModal(true);
-  };
-
-  const fillTestData = () => {
-    const testData = {
-      exam_date: '2024-01-25',
-      out_of_charge: '2024-01-28',
-      clearance_exps: 15000.00,
-      stamp_duty: 5000.00,
-      custodian: 'ABC Logistics Pvt Ltd',
-      offloading_charges: 8000.00,
-      transport_detention: 3000.00,
-      dispatch_info: 'Container dispatched to final destination via road transport',
-      containers: [
-        {
-          container_no: 'ABCD1234567',
-          size: '40',
-          vehicle_no: 'MH12AB1234',
-          date_of_offloading: '2024-01-26',
-          empty_return_date: '2024-01-30'
-        },
-        {
-          container_no: 'EFGH7890123',
-          size: '20',
-          vehicle_no: 'MH12CD5678',
-          date_of_offloading: '2024-01-27',
-          empty_return_date: '2024-01-31'
-        }
-      ]
-    };
-    setFormData(testData);
-    alert('Test data filled! Please review and submit.');
   };
 
   const handleSubmit = async (e) => {
@@ -503,6 +470,37 @@ export default function Stage3Page() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* EDI Information */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Job No</label>
+                    <input
+                      type="text"
+                      name="edi_job_no"
+                      value={formData.edi_job_no}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.edi_job_no ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter EDI Job Number"
+                    />
+                    {errors.edi_job_no && <p className="text-red-500 text-xs mt-1">{errors.edi_job_no}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Date</label>
+                    <input
+                      type="date"
+                      name="edi_date"
+                      value={formData.edi_date}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.edi_date ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.edi_date && <p className="text-red-500 text-xs mt-1">{errors.edi_date}</p>}
+                  </div>
+                </div>
+
                 {/* Clearance Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -537,30 +535,32 @@ export default function Stage3Page() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Clearance Expenses</label>
-                                          <input
-                        type="number"
-                        name="clearance_exps"
-                        value={formData.clearance_exps}
-                        onChange={handleInputChange}
-                        className={`w-full border rounded-md px-3 py-2 text-black ${
-                          errors.clearance_exps ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        step="0.01"
-                      />
+                    <input
+                      type="number"
+                      name="clearance_exps"
+                      value={formData.clearance_exps}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.clearance_exps ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      step="0.01"
+                      min="0"
+                    />
                     {errors.clearance_exps && <p className="text-red-500 text-xs mt-1">{errors.clearance_exps}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stamp Duty</label>
-                                          <input
-                        type="number"
-                        name="stamp_duty"
-                        value={formData.stamp_duty}
-                        onChange={handleInputChange}
-                        className={`w-full border rounded-md px-3 py-2 text-black ${
-                          errors.stamp_duty ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        step="0.01"
-                      />
+                    <input
+                      type="number"
+                      name="stamp_duty"
+                      value={formData.stamp_duty}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.stamp_duty ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      step="0.01"
+                      min="0"
+                    />
                     {errors.stamp_duty && <p className="text-red-500 text-xs mt-1">{errors.stamp_duty}</p>}
                   </div>
                 </div>
@@ -581,30 +581,32 @@ export default function Stage3Page() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Offloading Charges</label>
-                                          <input
-                        type="number"
-                        name="offloading_charges"
-                        value={formData.offloading_charges}
-                        onChange={handleInputChange}
-                        className={`w-full border rounded-md px-3 py-2 text-black ${
-                          errors.offloading_charges ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        step="0.01"
-                      />
+                    <input
+                      type="number"
+                      name="offloading_charges"
+                      value={formData.offloading_charges}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.offloading_charges ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      step="0.01"
+                      min="0"
+                    />
                     {errors.offloading_charges && <p className="text-red-500 text-xs mt-1">{errors.offloading_charges}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Transport/Detention</label>
-                                          <input
-                        type="number"
-                        name="transport_detention"
-                        value={formData.transport_detention}
-                        onChange={handleInputChange}
-                        className={`w-full border rounded-md px-3 py-2 text-black ${
-                          errors.transport_detention ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        step="0.01"
-                      />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Transport Detention</label>
+                    <input
+                      type="number"
+                      name="transport_detention"
+                      value={formData.transport_detention}
+                      onChange={handleInputChange}
+                      className={`w-full border rounded-md px-3 py-2 text-black ${
+                        errors.transport_detention ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      step="0.01"
+                      min="0"
+                    />
                     {errors.transport_detention && <p className="text-red-500 text-xs mt-1">{errors.transport_detention}</p>}
                   </div>
                 </div>
@@ -722,14 +724,7 @@ export default function Stage3Page() {
                   ))}
                 </div>
 
-                <div className="flex justify-between pt-6">
-                  <button
-                    type="button"
-                    onClick={fillTestData}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                  >
-                    Fill Test Data
-                  </button>
+                <div className="flex justify-end pt-6">
                   <div className="flex gap-4">
                                          <button
                        type="button"

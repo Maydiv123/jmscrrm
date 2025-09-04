@@ -196,23 +196,6 @@ export default function Stage4Page() {
     setShowUpdateModal(true);
   };
 
-  const fillTestData = () => {
-    const testData = {
-      bill_no: 'BILL2024001',
-      bill_date: '2024-01-30',
-      amount_taxable: 150000.00,
-      gst_5_percent: 7500.00,
-      gst_18_percent: 27000.00,
-      bill_mail: 'billing@maydiv.com',
-      bill_courier: 'DTDC Express',
-      courier_date: '2024-01-31',
-      acknowledge_date: '2024-02-02',
-      acknowledge_name: 'John Smith'
-    };
-    setFormData(testData);
-    alert('Test data filled! Please review and submit.');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedJob) return;
@@ -553,14 +536,7 @@ export default function Stage4Page() {
                   )}
                 </div>
 
-                <div className="flex justify-between pt-6">
-                  <button
-                    type="button"
-                    onClick={fillTestData}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                  >
-                    Fill Test Data
-                  </button>
+                <div className="flex justify-end pt-6">
                   <div className="flex gap-4">
                     <button
                       type="button"

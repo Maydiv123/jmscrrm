@@ -991,11 +991,12 @@ export default function PipelinePage() {
                             {renderFormField('job_date', 'Job Date', 'date')}
                           </div>
 
-                          {/* EDI Information */}
+                          {/* EDI Information - Commented out as per request
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {renderFormField('edi_job_no', 'EDI Job No.')}
                             {renderFormField('edi_date', 'EDI Date', 'date')}
                           </div>
+                          */}
 
                           {/* Parties */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1103,6 +1104,7 @@ export default function PipelinePage() {
                                       <option value="LCL">LCL</option>
                                     </select>
                                   </div>
+                                  {/* Date of Arrival section commented out as per request
                                   <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
                                     <input
@@ -1116,6 +1118,7 @@ export default function PipelinePage() {
                                       <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_arrival`]}</p>
                                     )}
                                   </div>
+                                  */}
                                 </div>
                               </div>
                             ))}
@@ -1127,7 +1130,7 @@ export default function PipelinePage() {
                             )}
                           </div>
 
-                {/* Notification Email */}
+                {/* Notification Email section commented out as per request
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1146,6 +1149,7 @@ export default function PipelinePage() {
                     </p>
                   </div>
                 </div>
+                */}
 
                                  <div className="flex justify-end gap-4 pt-6">
                    <button
@@ -1200,11 +1204,12 @@ export default function PipelinePage() {
                   {renderFormField('job_date', 'Job Date', 'date')}
                 </div>
 
-                {/* EDI Information */}
+                {/* EDI Information - Commented out as per request
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {renderFormField('edi_job_no', 'EDI Job No.')}
                   {renderFormField('edi_date', 'EDI Date', 'date')}
                 </div>
+                */}
 
                 {/* Parties */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1310,6 +1315,7 @@ export default function PipelinePage() {
                             <option value="LCL">LCL</option>
                           </select>
                         </div>
+                        {/* Date of Arrival section commented out as per request
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Date of Arrival</label>
                           <input
@@ -1323,6 +1329,7 @@ export default function PipelinePage() {
                             <p className="text-red-500 text-xs mt-1">{errors[`container_${index}_arrival`]}</p>
                           )}
                         </div>
+                        */}
                       </div>
                     </div>
                   ))}
@@ -1334,7 +1341,7 @@ export default function PipelinePage() {
                   )}
                 </div>
 
-                {/* Notification Email */}
+                {/* Notification Email section commented out as per request
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1353,6 +1360,7 @@ export default function PipelinePage() {
                     </p>
                   </div>
                 </div>
+                */}
 
                                  <div className="flex justify-end gap-4 pt-6">
                    <button
