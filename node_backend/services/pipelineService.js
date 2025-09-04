@@ -231,10 +231,12 @@ class PipelineService {
       const validatedData = this.validateAndConvertStage1Data(stage1Data);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
 
-      // Create pipeline job directly in stage2
+      // All jobs go directly to stage 2
+      const initialStage = "stage2";
+      
       console.log('Creating pipeline job with:', {
         job_no: validatedData.job_no,
-        current_stage: "stage2", // Create directly in stage2
+        current_stage: initialStage,
         status: "active",
         created_by: createdBy,
         assigned_to_stage2: validatedData.assigned_to_stage2 || null,
@@ -243,11 +245,11 @@ class PipelineService {
         notification_email: validatedData.notification_email || null,
       });
 
-      // Create the job in stage2
+      // Create the job in the appropriate stage
       const job = await PipelineJob.create(
         {
           job_no: validatedData.job_no,
-          current_stage: "stage2",
+          current_stage: initialStage,
           status: "active",
           created_by: createdBy,
           assigned_to_stage2: validatedData.assigned_to_stage2 || null,
@@ -258,7 +260,7 @@ class PipelineService {
         { transaction }
       );
       
-      console.log('Job created in stage2 with ID:', job.id);
+      console.log(`Job created in ${initialStage} with ID:`, job.id);
 
       console.log('Pipeline job created with ID:', job.id);
 
