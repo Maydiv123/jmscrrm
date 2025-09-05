@@ -1,5 +1,4 @@
 const { User } = require('../models');
-const bcrypt = require('bcryptjs');
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -25,12 +24,10 @@ exports.createUser = async (req, res) => {
 
     const { username, password, designation, is_admin, role } = req.body;
     
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
+    // Store password as plain text (no hashing)
     const user = await User.create({
       username,
-      password_hash: hashedPassword,
+      password_hash: password, // Store password directly without hashing
       designation,
       is_admin: is_admin || false,
       role: role || 'stage1_employee'
@@ -65,9 +62,9 @@ exports.updateUser = async (req, res) => {
       role: role || 'stage1_employee'
     };
 
-    // Only hash password if it's provided
+    // Only update password if it's provided (store as plain text)
     if (password && password.trim() !== '') {
-      updateData.password_hash = await bcrypt.hash(password, 10);
+      updateData.password_hash = password; // Store password directly without hashing
     }
 
     await user.update(updateData);

@@ -21,7 +21,21 @@ module.exports = (sequelize) => {
     courier_date: DataTypes.DATE,
     acknowledge_date: DataTypes.DATE,
     acknowledge_name: DataTypes.STRING,
-    bill_copy_upload: DataTypes.STRING
+    bill_copy_upload: DataTypes.STRING,
+    created_by: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    },
+    updated_by: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    }
   }, {
     tableName: 'stage4_data',
     timestamps: true,

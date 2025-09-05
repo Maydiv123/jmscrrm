@@ -155,6 +155,36 @@ class PipelineController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  // Update stage1 data (admin only)
+  async updateStage1(req, res) {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Check if user is admin
+      if (!req.user.isAdmin) {
+        return res.status(403).json({ error: "Access denied. Only admin can edit stage 1 data." });
+      }
+
+      const jobId = parseInt(req.params.id);
+      console.log("Stage1 update request for job:", jobId);
+      console.log("Request body:", req.body);
+      console.log("User ID:", req.session.userId);
+
+      const job = await pipelineService.updateStage1Data(
+        jobId,
+        req.body,
+        req.session.userId
+      );
+
+      res.json({ message: "Stage 1 data updated successfully", job });
+    } catch (error) {
+      console.error("Error in updateStage1 controller:", error);
+      res.status(500).json({ error: error.message });
+    }
+  }
   // Update stage2 data
   // controllers/pipelineController.js - Add debug logging to updateStage2
   async updateStage2(req, res) {

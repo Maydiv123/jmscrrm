@@ -162,38 +162,58 @@ export default function Stage4Page() {
     }
   }
 
-  const handleJobSelect = (job) => {
-    setSelectedJob(job);
-    // Pre-fill form with existing stage4 data if available
-    if (job.stage4) {
-      setFormData({
-        bill_no: job.stage4.bill_no || '',
-        bill_date: job.stage4.bill_date ? job.stage4.bill_date.split('T')[0] : '',
-        amount_taxable: job.stage4.amount_taxable || 0,
-        gst_5_percent: job.stage4.gst_5_percent || 0,
-        gst_18_percent: job.stage4.gst_18_percent || 0,
-        bill_mail: job.stage4.bill_mail || '',
-        bill_courier: job.stage4.bill_courier || '',
-        courier_date: job.stage4.courier_date ? job.stage4.courier_date.split('T')[0] : '',
-        acknowledge_date: job.stage4.acknowledge_date ? job.stage4.acknowledge_date.split('T')[0] : '',
-        acknowledge_name: job.stage4.acknowledge_name || ''
+  const handleJobSelect = async (job) => {
+    try {
+      // Fetch the complete job data including all stage data
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/jobs/${job.id}`, {
+        credentials: "include"
       });
-    } else {
-      // Reset form for new entry
-      setFormData({
-        bill_no: '',
-        bill_date: '',
-        amount_taxable: 0,
-        gst_5_percent: 0,
-        gst_18_percent: 0,
-        bill_mail: '',
-        bill_courier: '',
-        courier_date: '',
-        acknowledge_date: '',
-        acknowledge_name: ''
-      });
+      
+      if (res.ok) {
+        const completeJob = await res.json();
+        console.log("Complete job data for Stage 4:", completeJob);
+        setSelectedJob(completeJob);
+        
+        // Pre-fill form with existing stage4 data if available
+        const stage4Data = completeJob.stage4 || completeJob.Stage4;
+        if (stage4Data) {
+          setFormData({
+            bill_no: stage4Data.bill_no || '',
+            bill_date: stage4Data.bill_date ? stage4Data.bill_date.split('T')[0] : '',
+            amount_taxable: stage4Data.amount_taxable || 0,
+            gst_5_percent: stage4Data.gst_5_percent || 0,
+            gst_18_percent: stage4Data.gst_18_percent || 0,
+            bill_mail: stage4Data.bill_mail || '',
+            bill_courier: stage4Data.bill_courier || '',
+            courier_date: stage4Data.courier_date ? stage4Data.courier_date.split('T')[0] : '',
+            acknowledge_date: stage4Data.acknowledge_date ? stage4Data.acknowledge_date.split('T')[0] : '',
+            acknowledge_name: stage4Data.acknowledge_name || ''
+          });
+        } else {
+          // Reset form for new entry
+          setFormData({
+            bill_no: '',
+            bill_date: '',
+            amount_taxable: 0,
+            gst_5_percent: 0,
+            gst_18_percent: 0,
+            bill_mail: '',
+            bill_courier: '',
+            courier_date: '',
+            acknowledge_date: '',
+            acknowledge_name: ''
+          });
+        }
+        
+        setShowUpdateModal(true);
+      } else {
+        console.error("Failed to fetch complete job data");
+        alert("Failed to load job details");
+      }
+    } catch (error) {
+      console.error("Error fetching job details:", error);
+      alert("Error loading job details");
     }
-    setShowUpdateModal(true);
   };
 
   const handleSubmit = async (e) => {
@@ -374,12 +394,12 @@ export default function Stage4Page() {
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <h3 className="font-semibold text-gray-900 mb-2">Shipment Summary</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div><strong>Consignee:</strong> {selectedJob.stage1?.consignee || '-'}</div>
-                  <div><strong>Commodity:</strong> {selectedJob.stage1?.commodity || '-'}</div>
-                  <div><strong>Container:</strong> {selectedJob.stage1?.container_no || '-'}</div>
-                  <div><strong>Weight:</strong> {selectedJob.stage1?.weight || 0} KG</div>
-                  <div><strong>Duty Amount:</strong> ₹{selectedJob.stage2?.duty_amount || 0}</div>
-                  <div><strong>Clearance Exp:</strong> ₹{selectedJob.stage3?.clearance_exps || 0}</div>
+                  <div><strong>Consignee:</strong> {selectedJob.stage1?.consignee || selectedJob.Stage1?.consignee || '-'}</div>
+                  <div><strong>Commodity:</strong> {selectedJob.stage1?.commodity || selectedJob.Stage1?.commodity || '-'}</div>
+                  <div><strong>Container:</strong> {selectedJob.stage1?.container_no || selectedJob.Stage1?.container_no || '-'}</div>
+                  <div><strong>Weight:</strong> {selectedJob.stage1?.weight || selectedJob.Stage1?.weight || 0} KG</div>
+                  <div><strong>Duty Amount:</strong> ₹{selectedJob.stage2?.duty_amount || selectedJob.Stage2?.duty_amount || 0}</div>
+                  <div><strong>Clearance Exp:</strong> ₹{selectedJob.stage3?.clearance_exps || selectedJob.Stage3?.clearance_exps || 0}</div>
                 </div>
               </div>
 

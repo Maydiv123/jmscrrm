@@ -19,7 +19,21 @@ module.exports = (sequelize) => {
     offloading_charges: DataTypes.FLOAT,
     transport_detention: DataTypes.FLOAT,
     dispatch_info: DataTypes.STRING,
-    bill_of_entry_upload: DataTypes.STRING
+    bill_of_entry_upload: DataTypes.STRING,
+    created_by: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    },
+    updated_by: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    }
   }, {
     tableName: 'stage3_data',
     timestamps: true,

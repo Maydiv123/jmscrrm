@@ -35,7 +35,21 @@ module.exports = (sequelize) => {
     document_5: DataTypes.STRING,
     document_6: DataTypes.STRING,
     query_upload: DataTypes.STRING,
-    reply_upload: DataTypes.STRING
+    reply_upload: DataTypes.STRING,
+    created_by: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    },
+    updated_by: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    }
   }, {
     tableName: 'stage2_data',
     timestamps: true,

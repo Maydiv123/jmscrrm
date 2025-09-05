@@ -14,6 +14,11 @@ export default function JobDetailsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStageDetailsModalOpen, setIsStageDetailsModalOpen] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
+  const [userNames, setUserNames] = useState({});
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingStage, setEditingStage] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   // Add this helper above fetchJobDetails
   const normalizeJob = (raw) => {
@@ -99,7 +104,27 @@ export default function JobDetailsPage() {
       setIsAdmin(user.is_admin || false);
     }
     fetchJobDetails();
+    fetchUserNames();
   }, [fetchJobDetails]);
+
+  const fetchUserNames = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/users`,
+        { credentials: "include" }
+      );
+      if (response.ok) {
+        const users = await response.json();
+        const nameMap = {};
+        users.forEach(user => {
+          nameMap[user.id] = user.username;
+        });
+        setUserNames(nameMap);
+      }
+    } catch (error) {
+      console.error("Error fetching user names:", error);
+    }
+  };
   const handleFileUploaded = (stage) => {
     // File upload handled by FileUpload component
     console.log(`Files uploaded to ${stage}`);
@@ -113,6 +138,59 @@ export default function JobDetailsPage() {
   const closeStageDetails = () => {
     setIsStageDetailsModalOpen(false);
     setSelectedStage(null);
+  };
+
+  const openEditModal = (stage, stageData) => {
+    setEditingStage(stage);
+    setEditFormData(stageData || {});
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingStage(null);
+    setEditFormData({});
+  };
+
+  const handleEditFormChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const saveStageData = async () => {
+    if (!editingStage || !job) return;
+    
+    setIsSaving(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/jobs/${params.id}/${editingStage}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(editFormData)
+        }
+      );
+
+      if (response.ok) {
+        // Refresh job data
+        await fetchJobDetails();
+        closeEditModal();
+        alert('Stage data updated successfully!');
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error || 'Failed to update stage data'}`);
+      }
+    } catch (error) {
+      console.error('Error saving stage data:', error);
+      alert('Failed to save changes. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -229,31 +307,54 @@ export default function JobDetailsPage() {
                   Stage 1: Initial Setup
                 </div>
                 {job.stage1 && (
-                  <button
-                    onClick={() => openStageDetails("stage1", job.stage1)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors"
-                    title="View complete details"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => openStageDetails("stage1", job.stage1)}
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                      title="View complete details"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => openEditModal("stage1", job.stage1)}
+                        className="text-green-600 hover:text-green-800 transition-colors"
+                        title="Edit stage data"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 )}
               </h2>
 
@@ -314,6 +415,26 @@ export default function JobDetailsPage() {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* User Information */}
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm">
+                      <div className="mb-2">
+                        <span className="font-medium text-gray-600">Created By:</span>
+                        <span className="ml-2 text-gray-900">
+                          {job.stage1.created_by ? (userNames[job.stage1.created_by] || `User ID: ${job.stage1.created_by}`) : "Not Available"}
+                        </span>
+                      </div>
+                      {job.stage1.updated_by && job.stage1.updated_by !== job.stage1.created_by && (
+                        <div>
+                          <span className="font-medium text-gray-600">Last Updated By:</span>
+                          <span className="ml-2 text-gray-900">
+                            {userNames[job.stage1.updated_by] || `User ID: ${job.stage1.updated_by}`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -340,31 +461,54 @@ export default function JobDetailsPage() {
                   Stage 2: Customs & Documentation
                 </div>
                 {job.stage2 && (
-                  <button
-                    onClick={() => openStageDetails("stage2", job.stage2)}
-                    className="text-yellow-600 hover:text-yellow-800 transition-colors"
-                    title="View complete details"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => openStageDetails("stage2", job.stage2)}
+                      className="text-yellow-600 hover:text-yellow-800 transition-colors"
+                      title="View complete details"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => openEditModal("stage2", job.stage2)}
+                        className="text-green-600 hover:text-green-800 transition-colors"
+                        title="Edit stage data"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 )}
               </h2>
 
@@ -481,6 +625,26 @@ export default function JobDetailsPage() {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* User Information */}
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm">
+                      <div className="mb-2">
+                        <span className="font-medium text-gray-600">Created By:</span>
+                        <span className="ml-2 text-gray-900">
+                          {job.stage2.created_by ? (userNames[job.stage2.created_by] || `User ID: ${job.stage2.created_by}`) : "Not Available"}
+                        </span>
+                      </div>
+                      {job.stage2.updated_by && job.stage2.updated_by !== job.stage2.created_by && (
+                        <div>
+                          <span className="font-medium text-gray-600">Last Updated By:</span>
+                          <span className="ml-2 text-gray-900">
+                            {userNames[job.stage2.updated_by] || `User ID: ${job.stage2.updated_by}`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -507,31 +671,54 @@ export default function JobDetailsPage() {
                   Stage 3: Clearance & Logistics
                 </div>
                 {job.stage3 && (
-                  <button
-                    onClick={() => openStageDetails("stage3", job.stage3)}
-                    className="text-purple-600 hover:text-purple-800 transition-colors"
-                    title="View complete details"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => openStageDetails("stage3", job.stage3)}
+                      className="text-purple-600 hover:text-purple-800 transition-colors"
+                      title="View complete details"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => openEditModal("stage3", job.stage3)}
+                        className="text-green-600 hover:text-green-800 transition-colors"
+                        title="Edit stage data"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 )}
               </h2>
 
@@ -608,6 +795,26 @@ export default function JobDetailsPage() {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* User Information */}
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm">
+                      <div className="mb-2">
+                        <span className="font-medium text-gray-600">Created By:</span>
+                        <span className="ml-2 text-gray-900">
+                          {job.stage3.created_by ? (userNames[job.stage3.created_by] || `User ID: ${job.stage3.created_by}`) : "Not Available"}
+                        </span>
+                      </div>
+                      {job.stage3.updated_by && job.stage3.updated_by !== job.stage3.created_by && (
+                        <div>
+                          <span className="font-medium text-gray-600">Last Updated By:</span>
+                          <span className="ml-2 text-gray-900">
+                            {userNames[job.stage3.updated_by] || `User ID: ${job.stage3.updated_by}`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Containers */}
                   {job.stage3.containers &&
@@ -669,34 +876,67 @@ export default function JobDetailsPage() {
                   <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center mr-2">
                     <span className="text-orange-600 text-xs font-bold">4</span>
                   </span>
-                  Stage 4: Billing & Completion
+                  <div>
+                    <div>Stage 4: Billing & Completion</div>
+                    {job.stage4 && job.stage4.updated_by && job.stage4.updated_by !== job.stage4.created_by && (
+                      <div className="text-sm text-gray-600 mt-1">
+                        <span className="font-medium">Last Updated By:</span>
+                        <span className="ml-1 text-gray-800">
+                          {userNames[job.stage4.updated_by] || 'Not Available'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {job.stage4 && (
-                  <button
-                    onClick={() => openStageDetails("stage4", job.stage4)}
-                    className="text-orange-600 hover:text-orange-800 transition-colors"
-                    title="View complete details"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => openStageDetails("stage4", job.stage4)}
+                      className="text-orange-600 hover:text-orange-800 transition-colors"
+                      title="View complete details"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => openEditModal("stage4", job.stage4)}
+                        className="text-green-600 hover:text-green-800 transition-colors"
+                        title="Edit stage data"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 )}
               </h2>
 
@@ -789,6 +1029,7 @@ export default function JobDetailsPage() {
                       </p>
                     </div>
                   </div>
+                  
                 </div>
               )}
 
@@ -818,6 +1059,1020 @@ export default function JobDetailsPage() {
           stageNumber={selectedStage.stage.replace("stage", "")}
           stageName={getStageName(selectedStage.stage)}
         />
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && editingStage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                Edit {getStageName(editingStage)} Data
+              </h2>
+              <button
+                onClick={closeEditModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {editingStage === "stage1" && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Job No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.job_no || ""}
+                        onChange={(e) => handleEditFormChange("job_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Job Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.job_date ? editFormData.job_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("job_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        EDI Job No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.edi_job_no || ""}
+                        onChange={(e) => handleEditFormChange("edi_job_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        EDI Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.edi_date ? editFormData.edi_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("edi_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Consignee
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.consignee || ""}
+                        onChange={(e) => handleEditFormChange("consignee", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Shipper
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.shipper || ""}
+                        onChange={(e) => handleEditFormChange("shipper", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Port of Discharge
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.port_of_discharge || ""}
+                        onChange={(e) => handleEditFormChange("port_of_discharge", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Final Place of Delivery
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.final_place_of_delivery || ""}
+                        onChange={(e) => handleEditFormChange("final_place_of_delivery", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Port of Loading
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.port_of_loading || ""}
+                        onChange={(e) => handleEditFormChange("port_of_loading", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Country of Shipment
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.country_of_shipment || ""}
+                        onChange={(e) => handleEditFormChange("country_of_shipment", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        HBL No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.hbl_no || ""}
+                        onChange={(e) => handleEditFormChange("hbl_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        HBL Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.hbl_date ? editFormData.hbl_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("hbl_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        MBL No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.mbl_no || ""}
+                        onChange={(e) => handleEditFormChange("mbl_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        MBL Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.mbl_date ? editFormData.mbl_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("mbl_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Shipping Line
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.shipping_line || ""}
+                        onChange={(e) => handleEditFormChange("shipping_line", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Forwarder
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.forwarder || ""}
+                        onChange={(e) => handleEditFormChange("forwarder", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Weight
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.weight || ""}
+                        onChange={(e) => handleEditFormChange("weight", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Packages
+                      </label>
+                      <input
+                        type="number"
+                        value={editFormData.packages || ""}
+                        onChange={(e) => handleEditFormChange("packages", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Invoice No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.invoice_no || ""}
+                        onChange={(e) => handleEditFormChange("invoice_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Invoice Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.invoice_date ? editFormData.invoice_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("invoice_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Gateway IGM
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.gateway_igm || ""}
+                        onChange={(e) => handleEditFormChange("gateway_igm", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Gateway IGM Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.gateway_igm_date ? editFormData.gateway_igm_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("gateway_igm_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Local IGM
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.local_igm || ""}
+                        onChange={(e) => handleEditFormChange("local_igm", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Local IGM Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.local_igm_date ? editFormData.local_igm_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("local_igm_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Commodity
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.commodity || ""}
+                        onChange={(e) => handleEditFormChange("commodity", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        ETA
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.eta ? editFormData.eta.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("eta", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Current Status
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.current_status || ""}
+                        onChange={(e) => handleEditFormChange("current_status", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Container No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.container_no || ""}
+                        onChange={(e) => handleEditFormChange("container_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Container Size
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.container_size || ""}
+                        onChange={(e) => handleEditFormChange("container_size", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date of Arrival
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.date_of_arrival ? editFormData.date_of_arrival.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("date_of_arrival", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Invoice PL Doc
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.invoice_pl_doc || ""}
+                        onChange={(e) => handleEditFormChange("invoice_pl_doc", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        BL Doc
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.bl_doc || ""}
+                        onChange={(e) => handleEditFormChange("bl_doc", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        COO Doc
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.coo_doc || ""}
+                        onChange={(e) => handleEditFormChange("coo_doc", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Created By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.created_by || ""}
+                        onChange={(e) => handleEditFormChange("created_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Updated By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.updated_by || ""}
+                        onChange={(e) => handleEditFormChange("updated_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {editingStage === "stage2" && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        HSN Code
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.hsn_code || ""}
+                        onChange={(e) => handleEditFormChange("hsn_code", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Filing Requirement
+                      </label>
+                      <textarea
+                        value={editFormData.filing_requirement || ""}
+                        onChange={(e) => handleEditFormChange("filing_requirement", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows="3"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Checklist Sent Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.checklist_sent_date ? editFormData.checklist_sent_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("checklist_sent_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Approval Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.approval_date ? editFormData.approval_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("approval_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill of Entry No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.bill_of_entry_no || ""}
+                        onChange={(e) => handleEditFormChange("bill_of_entry_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill of Entry Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.bill_of_entry_date ? editFormData.bill_of_entry_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("bill_of_entry_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Debit Note
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.debit_note || ""}
+                        onChange={(e) => handleEditFormChange("debit_note", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Debit Paid By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.debit_paid_by || ""}
+                        onChange={(e) => handleEditFormChange("debit_paid_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Duty Amount
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.duty_amount || ""}
+                        onChange={(e) => handleEditFormChange("duty_amount", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Duty Paid By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.duty_paid_by || ""}
+                        onChange={(e) => handleEditFormChange("duty_paid_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ocean Freight
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.ocean_freight || ""}
+                        onChange={(e) => handleEditFormChange("ocean_freight", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Destination Charges
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.destination_charges || ""}
+                        onChange={(e) => handleEditFormChange("destination_charges", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Original Doc Received Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.original_doct_recd_date ? editFormData.original_doct_recd_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("original_doct_recd_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        DRN No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.drn_no || ""}
+                        onChange={(e) => handleEditFormChange("drn_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        IRN No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.irn_no || ""}
+                        onChange={(e) => handleEditFormChange("irn_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Documents Type
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.documents_type || ""}
+                        onChange={(e) => handleEditFormChange("documents_type", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Document 1
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.document_1 || ""}
+                        onChange={(e) => handleEditFormChange("document_1", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Document 2
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.document_2 || ""}
+                        onChange={(e) => handleEditFormChange("document_2", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Document 3
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.document_3 || ""}
+                        onChange={(e) => handleEditFormChange("document_3", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Document 4
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.document_4 || ""}
+                        onChange={(e) => handleEditFormChange("document_4", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Document 5
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.document_5 || ""}
+                        onChange={(e) => handleEditFormChange("document_5", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Document 6
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.document_6 || ""}
+                        onChange={(e) => handleEditFormChange("document_6", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Query Upload
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.query_upload || ""}
+                        onChange={(e) => handleEditFormChange("query_upload", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Reply Upload
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.reply_upload || ""}
+                        onChange={(e) => handleEditFormChange("reply_upload", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Created By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.created_by || ""}
+                        onChange={(e) => handleEditFormChange("created_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Updated By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.updated_by || ""}
+                        onChange={(e) => handleEditFormChange("updated_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {editingStage === "stage3" && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Exam Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.exam_date ? editFormData.exam_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("exam_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Out of Charge
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.out_of_charge ? editFormData.out_of_charge.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("out_of_charge", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Clearance Expenses
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.clearance_exps || ""}
+                        onChange={(e) => handleEditFormChange("clearance_exps", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Stamp Duty
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.stamp_duty || ""}
+                        onChange={(e) => handleEditFormChange("stamp_duty", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Custodian
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.custodian || ""}
+                        onChange={(e) => handleEditFormChange("custodian", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Offloading Charges
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.offloading_charges || ""}
+                        onChange={(e) => handleEditFormChange("offloading_charges", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Transport Detention
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.transport_detention || ""}
+                        onChange={(e) => handleEditFormChange("transport_detention", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Dispatch Info
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.dispatch_info || ""}
+                        onChange={(e) => handleEditFormChange("dispatch_info", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill of Entry Upload
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.bill_of_entry_upload || ""}
+                        onChange={(e) => handleEditFormChange("bill_of_entry_upload", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Created By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.created_by || ""}
+                        onChange={(e) => handleEditFormChange("created_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Updated By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.updated_by || ""}
+                        onChange={(e) => handleEditFormChange("updated_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {editingStage === "stage4" && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.bill_no || ""}
+                        onChange={(e) => handleEditFormChange("bill_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.bill_date ? editFormData.bill_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("bill_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Amount Taxable
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.amount_taxable || ""}
+                        onChange={(e) => handleEditFormChange("amount_taxable", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        GST 5%
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.gst_5_percent || ""}
+                        onChange={(e) => handleEditFormChange("gst_5_percent", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        GST 18%
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.gst_18_percent || ""}
+                        onChange={(e) => handleEditFormChange("gst_18_percent", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill Mail
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.bill_mail || ""}
+                        onChange={(e) => handleEditFormChange("bill_mail", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill Courier
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.bill_courier || ""}
+                        onChange={(e) => handleEditFormChange("bill_courier", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Courier Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.courier_date ? editFormData.courier_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("courier_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Acknowledge Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.acknowledge_date ? editFormData.acknowledge_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("acknowledge_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Acknowledge Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.acknowledge_name || ""}
+                        onChange={(e) => handleEditFormChange("acknowledge_name", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill Copy Upload
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.bill_copy_upload || ""}
+                        onChange={(e) => handleEditFormChange("bill_copy_upload", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Created By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.created_by || ""}
+                        onChange={(e) => handleEditFormChange("created_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Updated By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.updated_by || ""}
+                        onChange={(e) => handleEditFormChange("updated_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={closeEditModal}
+                className="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveStageData}
+                disabled={isSaving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

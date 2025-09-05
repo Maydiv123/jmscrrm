@@ -299,6 +299,8 @@ class PipelineService {
           container_no: validatedData.container_no || null,
           container_size: validatedData.container_size || null,
           date_of_arrival: validatedData.date_of_arrival || null,
+          created_by: createdBy,
+          updated_by: createdBy
         },
         { transaction }
       );
@@ -495,6 +497,50 @@ class PipelineService {
     }
   }
 
+  // Update stage1 data
+  async updateStage1Data(jobId, stage1Data, userId) {
+    const transaction = await PipelineJob.sequelize.transaction();
+
+    try {
+      console.log("Updating Stage1 data for job:", jobId);
+      console.log("Stage1 data payload:", stage1Data);
+
+      // First, try to find existing stage1 data
+      let stage1 = await Stage1Data.findOne({
+        where: { job_id: jobId },
+        transaction
+      });
+
+      if (stage1) {
+        // Update existing stage1 data
+        console.log("Updating existing stage1 data");
+        await stage1.update({
+          ...stage1Data,
+          updated_by: userId
+        }, { transaction });
+      } else {
+        // Create new stage1 data
+        console.log("Creating new stage1 data");
+        stage1 = await Stage1Data.create({
+          job_id: jobId,
+          ...stage1Data,
+          created_by: userId,
+          updated_by: userId
+        }, { transaction });
+      }
+
+      await transaction.commit();
+      console.log("Stage1 data updated successfully");
+
+      // Return the complete job with all data
+      return await this.getJobById(jobId);
+    } catch (error) {
+      await transaction.rollback();
+      console.error("Error updating stage1 data:", error);
+      throw new Error(`Failed to update stage1 data: ${error.message}`);
+    }
+  }
+
   // Update stage2 data
   // services/pipelineService.js - Rewrite updateStage2Data method
   async updateStage2Data(jobId, stage2Data, userId) {
@@ -513,7 +559,10 @@ class PipelineService {
       if (stage2) {
         // Update existing record
         console.log("Updating existing Stage2 data");
-        await stage2.update(stage2Data, { transaction });
+        await stage2.update({
+          ...stage2Data,
+          updated_by: userId
+        }, { transaction });
       } else {
         // Create new record
         console.log("Creating new Stage2 data");
@@ -521,6 +570,8 @@ class PipelineService {
           {
             job_id: jobId,
             ...stage2Data,
+            created_by: userId,
+            updated_by: userId
           },
           { transaction }
         );
@@ -629,12 +680,17 @@ class PipelineService {
         defaults: {
           job_id: jobId,
           ...processedData,
+          created_by: userId,
+          updated_by: userId
         },
         transaction,
       });
 
       if (!created) {
-        await stage3.update(processedData, { transaction });
+        await stage3.update({
+          ...processedData,
+          updated_by: userId
+        }, { transaction });
       }
 
       // Delete existing containers and add new ones
@@ -728,12 +784,17 @@ class PipelineService {
         defaults: {
           job_id: jobId,
           ...stage4Data,
+          created_by: userId,
+          updated_by: userId
         },
         transaction,
       });
 
       if (!created) {
-        await stage4.update(stage4Data, { transaction });
+        await stage4.update({
+          ...stage4Data,
+          updated_by: userId
+        }, { transaction });
       }
 
       // Update job stage to stage4 or completed

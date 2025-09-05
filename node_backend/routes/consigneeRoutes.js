@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Consignee } = require('../models');
+const { Consignee, PipelineJob, Stage1Data, Stage2Data } = require('../models');
 const { requireAuth } = require('../middlewares/auth');
 
 // Get all consignees
@@ -72,6 +72,41 @@ router.put('/:id', requireAuth, async (req, res) => {
     } else {
       res.status(500).json({ error: 'Failed to update consignee' });
     }
+  }
+});
+
+// Get jobs by consignee
+router.get('/:id/jobs', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const consignee = await Consignee.findByPk(id);
+    if (!consignee) {
+      return res.status(404).json({ error: 'Consignee not found' });
+    }
+
+    // Get all jobs for this consignee
+    const jobs = await PipelineJob.findAll({
+      include: [
+        {
+          model: Stage1Data,
+          as: 'Stage1',
+          where: { consignee: consignee.name },
+          required: true
+        },
+        {
+          model: Stage2Data,
+          as: 'Stage2',
+          required: false
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    res.json(jobs);
+  } catch (error) {
+    console.error('Error fetching consignee jobs:', error);
+    res.status(500).json({ error: 'Failed to fetch consignee jobs' });
   }
 });
 

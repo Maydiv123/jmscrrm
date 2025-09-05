@@ -43,7 +43,21 @@ module.exports = (sequelize) => {
     date_of_arrival: DataTypes.DATE,
     invoice_pl_doc: DataTypes.STRING,
     bl_doc: DataTypes.STRING,
-    coo_doc: DataTypes.STRING
+    coo_doc: DataTypes.STRING,
+    created_by: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    },
+    updated_by: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    }
   }, {
     tableName: 'stage1_data',
     timestamps: true,

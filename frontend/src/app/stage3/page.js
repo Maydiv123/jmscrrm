@@ -231,55 +231,74 @@ export default function Stage3Page() {
     }
   }
 
-  const handleJobSelect = (job) => {
-    setSelectedJob(job);
-    // Pre-fill form with existing stage3 data if available
-    if (job.stage3) {
-      setFormData({
-        edi_job_no: job.stage3.edi_job_no || '',
-        edi_date: job.stage3.edi_date ? job.stage3.edi_date.split('T')[0] : '',
-        exam_date: job.stage3.exam_date ? job.stage3.exam_date.split('T')[0] : '',
-        out_of_charge: job.stage3.out_of_charge ? job.stage3.out_of_charge.split('T')[0] : '',
-        clearance_exps: job.stage3.clearance_exps || '',
-        stamp_duty: job.stage3.stamp_duty || '',
-        custodian: job.stage3.custodian || '',
-        offloading_charges: job.stage3.offloading_charges || '',
-        transport_detention: job.stage3.transport_detention || '',
-        dispatch_info: job.stage3.dispatch_info || '',
-        containers: job.stage3.containers && job.stage3.containers.length > 0 
-          ? job.stage3.containers 
-          : [{
+  const handleJobSelect = async (job) => {
+    try {
+      // Fetch the complete job data including all stage data
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/jobs/${job.id}`, {
+        credentials: "include"
+      });
+      
+      if (res.ok) {
+        const completeJob = await res.json();
+        console.log("Complete job data for Stage 3:", completeJob);
+        setSelectedJob(completeJob);
+        
+        // Pre-fill form with existing stage3 data if available
+        const stage3Data = completeJob.stage3 || completeJob.Stage3;
+        if (stage3Data) {
+          setFormData({
+            edi_job_no: stage3Data.edi_job_no || '',
+            edi_date: stage3Data.edi_date ? stage3Data.edi_date.split('T')[0] : '',
+            exam_date: stage3Data.exam_date ? stage3Data.exam_date.split('T')[0] : '',
+            out_of_charge: stage3Data.out_of_charge ? stage3Data.out_of_charge.split('T')[0] : '',
+            clearance_exps: stage3Data.clearance_exps || '',
+            stamp_duty: stage3Data.stamp_duty || '',
+            custodian: stage3Data.custodian || '',
+            offloading_charges: stage3Data.offloading_charges || '',
+            transport_detention: stage3Data.transport_detention || '',
+            dispatch_info: stage3Data.dispatch_info || '',
+            containers: stage3Data.containers && stage3Data.containers.length > 0 
+              ? stage3Data.containers 
+              : [{
+                  container_no: '',
+                  size: '',
+                  vehicle_no: '',
+                  date_of_offloading: '',
+                  empty_return_date: ''
+                }]
+          });
+        } else {
+          // Reset form with empty values
+          setFormData({
+            edi_job_no: '',
+            edi_date: '',
+            exam_date: '',
+            out_of_charge: '',
+            clearance_exps: '',
+            stamp_duty: '',
+            custodian: '',
+            offloading_charges: '',
+            transport_detention: '',
+            dispatch_info: '',
+            containers: [{
               container_no: '',
               size: '',
               vehicle_no: '',
               date_of_offloading: '',
               empty_return_date: ''
             }]
-      });
-    } else {
-      // Reset form with empty values
-      setFormData({
-        edi_job_no: '',
-        edi_date: '',
-        exam_date: '',
-        out_of_charge: '',
-        clearance_exps: '',
-        stamp_duty: '',
-        custodian: '',
-        offloading_charges: '',
-        transport_detention: '',
-        dispatch_info: '',
-        containers: [{
-          container_no: '',
-          size: '',
-          vehicle_no: '',
-          date_of_offloading: '',
-          empty_return_date: ''
-        }]
-      });
+          });
+        }
+        
+        setShowUpdateModal(true);
+      } else {
+        console.error("Failed to fetch complete job data");
+        alert("Failed to load job details");
+      }
+    } catch (error) {
+      console.error("Error fetching job details:", error);
+      alert("Error loading job details");
     }
-    
-    setShowUpdateModal(true);
   };
 
   const handleSubmit = async (e) => {
@@ -460,12 +479,12 @@ export default function Stage3Page() {
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <h3 className="font-semibold text-gray-900 mb-2">Job Summary</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div><strong>Consignee:</strong> {selectedJob.stage1?.consignee || '-'}</div>
-                  <div><strong>Container:</strong> {selectedJob.stage1?.container_no || '-'}</div>
-                  <div><strong>Size:</strong> {selectedJob.stage1?.container_size || '-'}</div>
-                  <div><strong>Bill of Entry:</strong> {selectedJob.stage2?.bill_of_entry_no || '-'}</div>
-                  <div><strong>HSN Code:</strong> {selectedJob.stage2?.hsn_code || '-'}</div>
-                  <div><strong>Duty Amount:</strong> ₹{selectedJob.stage2?.duty_amount || 0}</div>
+                  <div><strong>Consignee:</strong> {selectedJob.stage1?.consignee || selectedJob.Stage1?.consignee || '-'}</div>
+                  <div><strong>Container:</strong> {selectedJob.stage1?.container_no || selectedJob.Stage1?.container_no || '-'}</div>
+                  <div><strong>Size:</strong> {selectedJob.stage1?.container_size || selectedJob.Stage1?.container_size || '-'}</div>
+                  <div><strong>Bill of Entry:</strong> {selectedJob.stage2?.bill_of_entry_no || selectedJob.Stage2?.bill_of_entry_no || '-'}</div>
+                  <div><strong>HSN Code:</strong> {selectedJob.stage2?.hsn_code || selectedJob.Stage2?.hsn_code || '-'}</div>
+                  <div><strong>Duty Amount:</strong> ₹{selectedJob.stage2?.duty_amount || selectedJob.Stage2?.duty_amount || 0}</div>
                 </div>
               </div>
 
