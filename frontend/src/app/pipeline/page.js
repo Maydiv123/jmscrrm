@@ -628,6 +628,9 @@ export default function PipelinePage() {
     try {
       console.log("Sending form data:", formData);
       
+      // Process containers - take first container data for individual fields
+      const firstContainer = formData.containers && formData.containers.length > 0 ? formData.containers[0] : {};
+      
       const testData = {
         job_no: formData.job_no,
         job_date: formData.job_date || "",
@@ -645,8 +648,8 @@ export default function PipelinePage() {
         mbl_date: formData.mbl_date || "",
         shipping_line: formData.shipping_line || "",
         forwarder: formData.forwarder || "",
-        weight: formData.weight || 0,
-        packages: formData.packages || 0,
+        weight: parseFloat(formData.weight) || 0,
+        packages: parseInt(formData.packages) || 0,
         invoice_no: formData.invoice_no || "",
         invoice_date: formData.invoice_date || "",
         gateway_igm: formData.gateway_igm || "",
@@ -656,7 +659,9 @@ export default function PipelinePage() {
         commodity: formData.commodity || "",
         eta: formData.eta || "",
         current_status: formData.current_status || "",
-        containers: formData.containers || [],
+        container_no: firstContainer.container_no || "",
+        container_size: firstContainer.container_size || "20",
+        date_of_arrival: firstContainer.date_of_arrival || "",
         notification_email: formData.notification_email || ""
       };
       

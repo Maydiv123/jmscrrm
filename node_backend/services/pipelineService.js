@@ -58,13 +58,17 @@ class PipelineService {
       }
     });
 
-    // Process containers if they exist
-    if (data.containers && Array.isArray(data.containers)) {
-      result.containers = data.containers.map(container => ({
-        container_no: container.container_no || '',
-        container_size: container.container_size || '20',
-        date_of_arrival: container.date_of_arrival ? new Date(container.date_of_arrival) : null
-      }));
+    // Process containers if they exist - extract first container data for individual fields
+    if (data.containers && Array.isArray(data.containers) && data.containers.length > 0) {
+      const firstContainer = data.containers[0];
+      result.container_no = firstContainer.container_no || '';
+      result.container_size = firstContainer.container_size || '20';
+      result.date_of_arrival = firstContainer.date_of_arrival ? new Date(firstContainer.date_of_arrival) : null;
+    } else {
+      // Set default values if no containers
+      result.container_no = '';
+      result.container_size = '20';
+      result.date_of_arrival = null;
     }
 
     return result;
@@ -266,6 +270,12 @@ class PipelineService {
 
       // Create stage1 data
       console.log('Creating stage1 data with job_id:', job.id);
+      console.log('Container data:', {
+        container_no: validatedData.container_no,
+        container_size: validatedData.container_size,
+        date_of_arrival: validatedData.date_of_arrival
+      });
+      
       const stage1Record = await Stage1Data.create(
         {
           job_id: job.id,

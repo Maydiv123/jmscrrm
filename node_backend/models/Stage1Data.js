@@ -39,7 +39,10 @@ module.exports = (sequelize) => {
     eta: DataTypes.DATE,
     current_status: DataTypes.STRING,
     container_no: DataTypes.STRING,
-    container_size: DataTypes.STRING,
+    container_size: {
+      type: DataTypes.ENUM('20', '40', 'LCL'),
+      allowNull: true
+    },
     date_of_arrival: DataTypes.DATE,
     invoice_pl_doc: DataTypes.STRING,
     bl_doc: DataTypes.STRING,
