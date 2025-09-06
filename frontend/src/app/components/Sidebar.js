@@ -37,6 +37,7 @@ export default function Sidebar({ userRole, isAdmin }) {
     { name: "Dashboard", href: "/dashboard/subadmin", icon: "📊" },
     // { name: "My Tasks", href: getTaskPage(currentUserRole), icon: "✅" },
     { name: "Pipeline", href: "/pipeline", icon: "🔄" },
+    { name: "Reports", href: "/reports", icon: "📋" },
     { name: "Profile", href: "/profile", icon: "👤" },
   ];
 
@@ -44,11 +45,22 @@ export default function Sidebar({ userRole, isAdmin }) {
     { name: "Dashboard", href: "/dashboard/employee", icon: "📊" },
     { name: "My Tasks", href: getTaskPage(currentUserRole), icon: "✅" },
     { name: "Pipeline", href: "/pipeline", icon: "🔄" },
+    { name: "Reports", href: "/reports", icon: "📋" },
+    { name: "Profile", href: "/profile", icon: "👤" },
+  ];
+
+  const stage1EmployeeMenuItems = [
+    { name: "Dashboard", href: "/dashboard/employee", icon: "📊" },
+    { name: "My Tasks", href: getTaskPage(currentUserRole), icon: "✅" },
+    { name: "Pipeline", href: "/pipeline", icon: "🔄" },
+    { name: "Reports", href: "/reports", icon: "📋" },
+    { name: "Consignee", href: "/consignee", icon: "🏢" },
     { name: "Profile", href: "/profile", icon: "👤" },
   ];
 
   function getTaskPage(role) {
     switch (role) {
+      case 'stage1_employee': return "/pipeline";
       case 'stage2_employee': return "/stage2";
       case 'stage3_employee': return "/stage3";
       case 'customer': return "/stage4";
@@ -63,6 +75,8 @@ export default function Sidebar({ userRole, isAdmin }) {
     menuItems = adminMenuItems;
   } else if (currentUserRole === 'subadmin') {
     menuItems = subadminMenuItems;
+  } else if (currentUserRole === 'stage1_employee') {
+    menuItems = stage1EmployeeMenuItems;
   } else {
     menuItems = employeeMenuItems;
   }

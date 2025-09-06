@@ -150,20 +150,20 @@ export default function ReportsPage() {
       <Sidebar />
       <div className="flex-1 ml-64">
         <div className="p-8">
-          <h1 className="text-2xl font-bold mb-6">Reports</h1>
+          <h1 className="text-2xl font-bold mb-6 text-black">Reports</h1>
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Download Excel Report</h2>
-            <p className="text-gray-600 mb-4">Select a consignee to download all their jobs in Excel format</p>
+            <h2 className="text-lg font-semibold mb-4 text-black">Download Excel Report</h2>
+            <p className="text-black mb-4">Select a consignee to download all their jobs in Excel format</p>
             <div className="flex items-center space-x-4">
               <div className="w-64">
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   value={selectedConsignee}
                   onChange={(e) => setSelectedConsignee(e.target.value)}
                 >
-                  <option value="">Select Consignee</option>
+                  <option value="" className="text-black">Select Consignee</option>
                   {consignees.map((consignee) => (
-                    <option key={consignee.id} value={consignee.id}>
+                    <option key={consignee.id} value={consignee.id} className="text-black">
                       {consignee.name || `Consignee ${consignee.id}`}
                     </option>
                   ))}
