@@ -72,9 +72,13 @@ CREATE TABLE stage1_data (
     invoice_pl_doc VARCHAR(255),
     bl_doc VARCHAR(255),
     coo_doc VARCHAR(255),
+    created_by INT,
+    updated_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (job_id) REFERENCES pipeline_jobs(id) ON DELETE CASCADE
+    FOREIGN KEY (job_id) REFERENCES pipeline_jobs(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (updated_by) REFERENCES users(id)
 );
 
 -- Stage 2: Customs & Documentation (Employee)
