@@ -61,7 +61,7 @@ class PipelineService {
     // Process containers if they exist
     if (data.containers && Array.isArray(data.containers)) {
       result.containers = data.containers.map(container => ({
-        container_no: container.container_no || '',
+        container_no: container.container_no || null,
         container_size: container.container_size || '20',
         date_of_arrival: container.date_of_arrival ? new Date(container.date_of_arrival) : null
       }));
@@ -316,7 +316,7 @@ class PipelineService {
             await Stage1Container.create(
               {
                 job_id: job.id,
-                container_no: container.container_no || '',
+                container_no: container.container_no || null,
                 container_size: container.container_size || '20',
                 date_of_arrival: container.date_of_arrival || null,
               },

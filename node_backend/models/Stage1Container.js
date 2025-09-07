@@ -18,7 +18,7 @@ module.exports = (sequelize) => {
     },
     container_no: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true
     },
     container_size: {
       type: DataTypes.STRING,
