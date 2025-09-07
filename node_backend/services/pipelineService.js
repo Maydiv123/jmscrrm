@@ -307,21 +307,23 @@ class PipelineService {
 
       console.log('Stage1 data created with ID:', stage1Record.id);
 
-      // Create containers if provided
+      // Create containers if provided - only if container_no is not empty
       if (validatedData.containers && Array.isArray(validatedData.containers) && validatedData.containers.length > 0) {
-        console.log('Creating containers:', validatedData.containers.length);
+        console.log('Processing containers:', validatedData.containers.length);
         for (const container of validatedData.containers) {
-          if (container && typeof container === 'object') {
+          if (container && typeof container === 'object' && container.container_no && container.container_no.trim() !== '') {
             console.log('Creating container:', container);
             await Stage1Container.create(
               {
                 job_id: job.id,
-                container_no: container.container_no || null,
+                container_no: container.container_no,
                 container_size: container.container_size || '20',
                 date_of_arrival: container.date_of_arrival || null,
               },
               { transaction }
             );
+          } else {
+            console.log('Skipping empty container:', container);
           }
         }
       }
@@ -353,7 +355,12 @@ class PipelineService {
         sqlState: error.sqlState,
         sqlMessage: error.sqlMessage
       });
-      await transaction.rollback();
+      
+      // Only rollback if transaction is still active
+      if (transaction && !transaction.finished) {
+        await transaction.rollback();
+      }
+      
       throw new Error(`Failed to create job: ${error.message}`);
     }
   }
