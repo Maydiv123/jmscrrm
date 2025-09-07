@@ -437,6 +437,15 @@ export default function PipelinePage() {
           newErrors[`container_${index}_arrival`] = 'Date of arrival cannot be in the future';
         }
       });
+      
+      // Check if all containers are empty and warn user
+      const hasValidContainers = formData.containers.some(container => 
+        container && container.container_no && container.container_no.trim() !== ''
+      );
+      
+      if (!hasValidContainers && formData.containers.length > 0) {
+        newErrors.containers = 'At least one container must have a valid container number, or remove all empty containers';
+      }
     }
     
     setErrors(newErrors);
@@ -628,6 +637,11 @@ export default function PipelinePage() {
     try {
       console.log("Sending form data:", formData);
       
+      // Filter out empty containers before sending
+      const validContainers = (formData.containers || []).filter(container => 
+        container && container.container_no && container.container_no.trim() !== ''
+      );
+      
       const testData = {
         job_no: formData.job_no,
         job_date: formData.job_date || "",
@@ -656,7 +670,7 @@ export default function PipelinePage() {
         commodity: formData.commodity || "",
         eta: formData.eta || "",
         current_status: formData.current_status || "",
-        containers: formData.containers || [],
+        containers: validContainers,
         notification_email: formData.notification_email || ""
       };
       
@@ -685,7 +699,18 @@ export default function PipelinePage() {
       } else {
         const errorData = await res.text();
         console.error("Backend error response:", errorData);
-        alert("Error creating job: " + errorData);
+        
+        // Try to parse JSON error response
+        try {
+          const errorJson = JSON.parse(errorData);
+          if (errorJson.error) {
+            alert("Error creating job: " + errorJson.error);
+          } else {
+            alert("Error creating job: " + errorData);
+          }
+        } catch (parseError) {
+          alert("Error creating job: " + errorData);
+        }
       }
          } catch (err) {
        console.error("Error creating job:", err);
@@ -764,10 +789,16 @@ export default function PipelinePage() {
     setIsSubmitting(true);
     
     try {
+      // Filter out empty containers before sending
+      const validContainers = (formData.containers || []).filter(container => 
+        container && container.container_no && container.container_no.trim() !== ''
+      );
+      
       const updateData = {
         ...formData,
         weight: parseInt(formData.weight) || 0,
-        packages: parseInt(formData.packages) || 0
+        packages: parseInt(formData.packages) || 0,
+        containers: validContainers
       };
 
       const res = await fetch(process.env.NEXT_PUBLIC_API_URL + `/api/pipeline/jobs/${editingJob.id}`, {
@@ -794,7 +825,19 @@ export default function PipelinePage() {
         alert('Job updated successfully!');
       } else {
         const errorData = await res.text();
-        alert("Error updating job: " + errorData);
+        console.error("Backend error response:", errorData);
+        
+        // Try to parse JSON error response
+        try {
+          const errorJson = JSON.parse(errorData);
+          if (errorJson.error) {
+            alert("Error updating job: " + errorJson.error);
+          } else {
+            alert("Error updating job: " + errorData);
+          }
+        } catch (parseError) {
+          alert("Error updating job: " + errorData);
+        }
       }
          } catch (err) {
        console.error("Error updating job:", err);
@@ -1065,6 +1108,12 @@ export default function PipelinePage() {
                               </button>
                             </div>
                             
+                            {errors.containers && (
+                              <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+                                {errors.containers}
+                              </div>
+                            )}
+                            
                             {formData.containers && formData.containers.map((container, index) => (
                               <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                                 <div className="flex justify-between items-center mb-3">
@@ -1275,6 +1324,12 @@ export default function PipelinePage() {
                       <span>+</span> Add Container
                     </button>
                   </div>
+                  
+                  {errors.containers && (
+                    <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+                      {errors.containers}
+                    </div>
+                  )}
                   
                   {formData.containers && formData.containers.map((container, index) => (
                     <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
