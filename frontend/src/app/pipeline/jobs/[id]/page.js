@@ -20,6 +20,36 @@ export default function JobDetailsPage() {
   const [editFormData, setEditFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
+  // Manual stage advancement handler
+  const handleAdvanceStage = async (jobId, targetStage) => {
+    if (!confirm(`Are you sure you want to advance this job to ${targetStage}?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/jobs/${jobId}/advance-stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ targetStage })
+      });
+
+      if (res.ok) {
+        const responseData = await res.json();
+        console.log("Stage advancement success:", responseData);
+        alert(`Job successfully advanced to ${targetStage}!`);
+        await fetchJobDetails(); // Refresh the job details
+      } else {
+        const errorData = await res.text();
+        console.error("Error advancing stage:", errorData);
+        alert("Error advancing stage: " + errorData);
+      }
+    } catch (err) {
+      console.error("Error advancing stage:", err);
+      alert("Error advancing stage");
+    }
+  };
+
   // Add this helper above fetchJobDetails
   const normalizeJob = (raw) => {
     if (!raw || typeof raw !== "object") return raw;
@@ -194,12 +224,12 @@ export default function JobDetailsPage() {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "";
     return new Date(dateString).toLocaleDateString();
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return "₹0";
+    if (!amount || amount === 0) return "";
     return `₹${parseFloat(amount).toLocaleString()}`;
   };
 
@@ -371,7 +401,7 @@ export default function JobDetailsPage() {
                         Consignee
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage1.consignee || "N/A"}
+                        {job.stage1.consignee || ""}
                       </p>
                     </div>
                     <div>
@@ -379,7 +409,7 @@ export default function JobDetailsPage() {
                         Shipper
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage1.shipper || "N/A"}
+                        {job.stage1.shipper || ""}
                       </p>
                     </div>
                     <div>
@@ -387,7 +417,7 @@ export default function JobDetailsPage() {
                         Commodity
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage1.commodity || "N/A"}
+                        {job.stage1.commodity || ""}
                       </p>
                     </div>
                     <div>
@@ -395,7 +425,7 @@ export default function JobDetailsPage() {
                         Weight
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage1.weight || "N/A"}
+                        {job.stage1.weight || ""}
                       </p>
                     </div>
                     <div>
@@ -403,7 +433,7 @@ export default function JobDetailsPage() {
                         Packages
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage1.packages || "N/A"}
+                        {job.stage1.packages || ""}
                       </p>
                     </div>
                     <div>
@@ -411,7 +441,7 @@ export default function JobDetailsPage() {
                         Container No
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage1.container_no || "N/A"}
+                        {job.stage1.container_no || ""}
                       </p>
                     </div>
                   </div>
@@ -508,6 +538,15 @@ export default function JobDetailsPage() {
                         </svg>
                       </button>
                     )}
+                    {job.stage2 && job.current_stage === 'stage2' && (
+                      <button
+                        onClick={() => handleAdvanceStage(job.id, 'stage3')}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                        title="Advance to Stage 3"
+                      >
+                        Advance to Stage 3
+                      </button>
+                    )}
                   </div>
                 )}
               </h2>
@@ -525,7 +564,7 @@ export default function JobDetailsPage() {
                         HSN Code
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage2.hsn_code || "N/A"}
+                        {job.stage2.hsn_code || ""}
                       </p>
                     </div>
                     <div>
@@ -533,7 +572,7 @@ export default function JobDetailsPage() {
                         Documents Type
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage2.documents_type || "N/A"}
+                        {job.stage2.documents_type || ""}
                       </p>
                     </div>
                     <div>
@@ -541,7 +580,7 @@ export default function JobDetailsPage() {
                         Filing Requirement
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage2.filing_requirement || "N/A"}
+                        {job.stage2.filing_requirement || ""}
                       </p>
                     </div>
                     <div>
@@ -565,7 +604,7 @@ export default function JobDetailsPage() {
                         Bill of Entry No
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage2.bill_of_entry_no || "N/A"}
+                        {job.stage2.bill_of_entry_no || ""}
                       </p>
                     </div>
                     <div>
@@ -578,22 +617,6 @@ export default function JobDetailsPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Duty Amount
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {formatCurrency(job.stage2.duty_amount)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Duty Paid By
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {job.stage2.duty_paid_by || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
                         Ocean Freight
                       </p>
                       <p className="text-sm text-gray-900">
@@ -602,18 +625,10 @@ export default function JobDetailsPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Destination Charges
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {formatCurrency(job.stage2.destination_charges)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
                         DRN No
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage2.drn_no || "N/A"}
+                        {job.stage2.drn_no || ""}
                       </p>
                     </div>
                     <div>
@@ -621,7 +636,23 @@ export default function JobDetailsPage() {
                         IRN No
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage2.irn_no || "N/A"}
+                        {job.stage2.irn_no || ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        EDI Job No
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {job.stage2.edi_job_no || ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        EDI Date
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(job.stage2.edi_date)}
                       </p>
                     </div>
                   </div>
@@ -718,6 +749,15 @@ export default function JobDetailsPage() {
                         </svg>
                       </button>
                     )}
+                    {job.stage3 && job.current_stage === 'stage3' && (
+                      <button
+                        onClick={() => handleAdvanceStage(job.id, 'stage4')}
+                        className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                        title="Advance to Stage 4"
+                      >
+                        Advance to Stage 4
+                      </button>
+                    )}
                   </div>
                 )}
               </h2>
@@ -767,7 +807,7 @@ export default function JobDetailsPage() {
                         Custodian
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage3.custodian || "N/A"}
+                        {job.stage3.custodian || ""}
                       </p>
                     </div>
                     <div>
@@ -791,7 +831,7 @@ export default function JobDetailsPage() {
                         Dispatch Info
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage3.dispatch_info || "N/A"}
+                        {job.stage3.dispatch_info || ""}
                       </p>
                     </div>
                   </div>
@@ -831,15 +871,15 @@ export default function JobDetailsPage() {
                                   <span className="font-medium">
                                     Container:
                                   </span>{" "}
-                                  {container.container_no || "N/A"}
+                                  {container.container_no || ""}
                                 </div>
                                 <div>
                                   <span className="font-medium">Size:</span>{" "}
-                                  {container.size || "N/A"}
+                                  {container.size || ""}
                                 </div>
                                 <div>
                                   <span className="font-medium">Vehicle:</span>{" "}
-                                  {container.vehicle_no || "N/A"}
+                                  {container.vehicle_no || ""}
                                 </div>
                                 <div>
                                   <span className="font-medium">
@@ -936,6 +976,15 @@ export default function JobDetailsPage() {
                         </svg>
                       </button>
                     )}
+                    {job.stage4 && job.current_stage === 'stage4' && (
+                      <button
+                        onClick={() => handleAdvanceStage(job.id, 'completed')}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                        title="Complete Job"
+                      >
+                        Complete Job
+                      </button>
+                    )}
                   </div>
                 )}
               </h2>
@@ -953,7 +1002,7 @@ export default function JobDetailsPage() {
                         Bill No
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage4.bill_no || "N/A"}
+                        {job.stage4.bill_no || ""}
                       </p>
                     </div>
                     <div>
@@ -993,7 +1042,7 @@ export default function JobDetailsPage() {
                         Bill Mail
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage4.bill_mail || "N/A"}
+                        {job.stage4.bill_mail || ""}
                       </p>
                     </div>
                     <div>
@@ -1001,7 +1050,7 @@ export default function JobDetailsPage() {
                         Bill Courier
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage4.bill_courier || "N/A"}
+                        {job.stage4.bill_courier || ""}
                       </p>
                     </div>
                     <div>
@@ -1025,7 +1074,7 @@ export default function JobDetailsPage() {
                         Acknowledge Name
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage4.acknowledge_name || "N/A"}
+                        {job.stage4.acknowledge_name || ""}
                       </p>
                     </div>
                   </div>
@@ -1544,51 +1593,6 @@ export default function JobDetailsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Debit Note
-                      </label>
-                      <input
-                        type="text"
-                        value={editFormData.debit_note || ""}
-                        onChange={(e) => handleEditFormChange("debit_note", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Debit Paid By
-                      </label>
-                      <input
-                        type="text"
-                        value={editFormData.debit_paid_by || ""}
-                        onChange={(e) => handleEditFormChange("debit_paid_by", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Duty Amount
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editFormData.duty_amount || ""}
-                        onChange={(e) => handleEditFormChange("duty_amount", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Duty Paid By
-                      </label>
-                      <input
-                        type="text"
-                        value={editFormData.duty_paid_by || ""}
-                        onChange={(e) => handleEditFormChange("duty_paid_by", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Ocean Freight
                       </label>
                       <input
@@ -1596,18 +1600,6 @@ export default function JobDetailsPage() {
                         step="0.01"
                         value={editFormData.ocean_freight || ""}
                         onChange={(e) => handleEditFormChange("ocean_freight", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Destination Charges
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editFormData.destination_charges || ""}
-                        onChange={(e) => handleEditFormChange("destination_charges", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -1765,6 +1757,28 @@ export default function JobDetailsPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        EDI Job No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.edi_job_no || ""}
+                        onChange={(e) => handleEditFormChange("edi_job_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        EDI Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.edi_date ? editFormData.edi_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("edi_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
                 </>
               )}
@@ -1861,6 +1875,63 @@ export default function JobDetailsPage() {
                         type="text"
                         value={editFormData.dispatch_info || ""}
                         onChange={(e) => handleEditFormChange("dispatch_info", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Debit Note
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.debit_note || ""}
+                        onChange={(e) => handleEditFormChange("debit_note", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Debit Paid By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.debit_paid_by || ""}
+                        onChange={(e) => handleEditFormChange("debit_paid_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Duty Amount
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.duty_amount || ""}
+                        onChange={(e) => handleEditFormChange("duty_amount", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Duty Paid By
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.duty_paid_by || ""}
+                        onChange={(e) => handleEditFormChange("duty_paid_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Destination Charges
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.destination_charges || ""}
+                        onChange={(e) => handleEditFormChange("destination_charges", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>

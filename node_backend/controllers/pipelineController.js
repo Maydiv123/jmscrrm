@@ -83,7 +83,7 @@ class PipelineController {
       const job = await pipelineService.getJobById(jobId);
 
       // Check if user has access to this job
-      if (!this.hasJobAccess(req, job)) {
+      if (!PipelineController.hasJobAccess(req, job)) {
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -309,7 +309,7 @@ class PipelineController {
       // Check if user has access to this job
       const jobId = parseInt(req.body.job_id);
       const job = await pipelineService.getJobById(jobId);
-      if (!this.hasJobAccess(req, job)) {
+      if (!PipelineController.hasJobAccess(req, job)) {
         return res.status(403).json({ error: "Access denied. You don't have permission to upload files for this job." });
       }
 
@@ -350,7 +350,7 @@ class PipelineController {
 
       // Check if user has access to this job
       const job = await pipelineService.getJobById(jobId);
-      if (!this.hasJobAccess(req, job)) {
+      if (!PipelineController.hasJobAccess(req, job)) {
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -374,7 +374,7 @@ class PipelineController {
 
       // Check if user has access to this job
       const job = await pipelineService.getJobById(file.job_id);
-      if (!this.hasJobAccess(req, job)) {
+      if (!PipelineController.hasJobAccess(req, job)) {
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -418,7 +418,7 @@ class PipelineController {
 
       // Check if user has access to this job
       const job = await pipelineService.getJobById(file.job_id);
-      if (!this.hasJobAccess(req, job)) {
+      if (!PipelineController.hasJobAccess(req, job)) {
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -449,9 +449,45 @@ class PipelineController {
     }
   };
 
+  // Advance job stage manually
+  advanceJobStage = async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const jobId = parseInt(req.params.id);
+      const { targetStage } = req.body;
+
+      if (!targetStage) {
+        return res.status(400).json({ error: "Target stage is required" });
+      }
+
+      // Get job to check access
+      const job = await pipelineService.getJobById(jobId);
+      if (!PipelineController.hasJobAccess(req, job)) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Advance the job stage
+      const result = await pipelineService.advanceJobStage(jobId, targetStage, req.session.userId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error advancing job stage:", error);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
   // Helper methods
-  hasJobAccess = (req, job) => {
+  static hasJobAccess(req, job) {
     const userId = req.session.userId;
+
+    // Check if req.user exists
+    if (!req.user) {
+      console.error('req.user is undefined in hasJobAccess');
+      return false;
+    }
 
     // Admin and subadmin have access to all jobs
     if (req.user.isAdmin || req.user.role === "subadmin") {
@@ -471,7 +507,7 @@ class PipelineController {
       default:
         return false;
     }
-  };
+  }
 }
 
 module.exports = new PipelineController();

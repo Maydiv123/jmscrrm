@@ -5,12 +5,12 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
   if (!isOpen) return null;
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '';
     return new Date(dateString).toLocaleDateString();
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return '₹0';
+    if (!amount || amount === 0) return '';
     return `₹${parseFloat(amount).toLocaleString()}`;
   };
 
@@ -31,7 +31,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-gray-600">Job No</p>
-                <p className="text-sm text-gray-900">{stageData.job_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.job_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Job Date</p>
@@ -39,7 +39,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">EDI Job No</p>
-                <p className="text-sm text-gray-900">{stageData.edi_job_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.edi_job_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">EDI Date</p>
@@ -47,31 +47,31 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Consignee</p>
-                <p className="text-sm text-gray-900">{stageData.consignee || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.consignee || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Shipper</p>
-                <p className="text-sm text-gray-900">{stageData.shipper || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.shipper || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Port of Discharge</p>
-                <p className="text-sm text-gray-900">{stageData.port_of_discharge || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.port_of_discharge || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Final Place of Delivery</p>
-                <p className="text-sm text-gray-900">{stageData.final_place_of_delivery || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.final_place_of_delivery || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Port of Loading</p>
-                <p className="text-sm text-gray-900">{stageData.port_of_loading || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.port_of_loading || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Country of Shipment</p>
-                <p className="text-sm text-gray-900">{stageData.country_of_shipment || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.country_of_shipment || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">HBL No</p>
-                <p className="text-sm text-gray-900">{stageData.hbl_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.hbl_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">HBL Date</p>
@@ -79,7 +79,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">MBL No</p>
-                <p className="text-sm text-gray-900">{stageData.mbl_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.mbl_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">MBL Date</p>
@@ -87,23 +87,23 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Shipping Line</p>
-                <p className="text-sm text-gray-900">{stageData.shipping_line || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.shipping_line || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Forwarder</p>
-                <p className="text-sm text-gray-900">{stageData.forwarder || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.forwarder || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Weight</p>
-                <p className="text-sm text-gray-900">{stageData.weight || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.weight || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Packages</p>
-                <p className="text-sm text-gray-900">{stageData.packages || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.packages || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Invoice No</p>
-                <p className="text-sm text-gray-900">{stageData.invoice_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.invoice_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Invoice Date</p>
@@ -111,7 +111,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Gateway IGM</p>
-                <p className="text-sm text-gray-900">{stageData.gateway_igm || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.gateway_igm || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Gateway IGM Date</p>
@@ -119,7 +119,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Local IGM</p>
-                <p className="text-sm text-gray-900">{stageData.local_igm || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.local_igm || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Local IGM Date</p>
@@ -127,23 +127,23 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Commodity</p>
-                <p className="text-sm text-gray-900">{stageData.commodity || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.commodity || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">ETA</p>
-                <p className="text-sm text-gray-900">{stageData.eta ? new Date(stageData.eta).toLocaleString() : 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.eta ? new Date(stageData.eta).toLocaleString() : ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Current Status</p>
-                <p className="text-sm text-gray-900">{stageData.current_status || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.current_status || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Container No</p>
-                <p className="text-sm text-gray-900">{stageData.container_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.container_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Container Size</p>
-                <p className="text-sm text-gray-900">{stageData.container_size || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.container_size || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Date of Arrival</p>
@@ -159,15 +159,15 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-gray-600">HSN Code</p>
-                <p className="text-sm text-gray-900">{stageData.hsn_code || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.hsn_code || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Documents Type</p>
-                <p className="text-sm text-gray-900">{stageData.documents_type || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.documents_type || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Filing Requirement</p>
-                <p className="text-sm text-gray-900">{stageData.filing_requirement || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.filing_requirement || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Checklist Sent</p>
@@ -179,7 +179,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Bill of Entry No</p>
-                <p className="text-sm text-gray-900">{stageData.bill_of_entry_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.bill_of_entry_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Bill of Entry Date</p>
@@ -191,7 +191,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Duty Paid By</p>
-                <p className="text-sm text-gray-900">{stageData.duty_paid_by || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.duty_paid_by || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Ocean Freight</p>
@@ -203,19 +203,19 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">DRN No</p>
-                <p className="text-sm text-gray-900">{stageData.drn_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.drn_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">IRN No</p>
-                <p className="text-sm text-gray-900">{stageData.irn_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.irn_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Debit Note</p>
-                <p className="text-sm text-gray-900">{stageData.debit_note || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.debit_note || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Debit Paid By</p>
-                <p className="text-sm text-gray-900">{stageData.debit_paid_by || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.debit_paid_by || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Original Documents Received Date</p>
@@ -247,7 +247,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Custodian</p>
-                <p className="text-sm text-gray-900">{stageData.custodian || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.custodian || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Offloading Charges</p>
@@ -259,7 +259,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Dispatch Info</p>
-                <p className="text-sm text-gray-900">{stageData.dispatch_info || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.dispatch_info || ''}</p>
               </div>
             </div>
             
@@ -273,15 +273,15 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm font-medium text-gray-600">Container No</p>
-                          <p className="text-sm text-gray-900">{container.container_no || 'N/A'}</p>
+                          <p className="text-sm text-gray-900">{container.container_no || ''}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-600">Size</p>
-                          <p className="text-sm text-gray-900">{container.size || 'N/A'}</p>
+                          <p className="text-sm text-gray-900">{container.size || ''}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-600">Vehicle No</p>
-                          <p className="text-sm text-gray-900">{container.vehicle_no || 'N/A'}</p>
+                          <p className="text-sm text-gray-900">{container.vehicle_no || ''}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-600">Date of Offloading</p>
@@ -302,7 +302,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-gray-600">Bill No</p>
-                <p className="text-sm text-gray-900">{stageData.bill_no || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.bill_no || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Bill Date</p>
@@ -322,11 +322,11 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Bill Mail</p>
-                <p className="text-sm text-gray-900">{stageData.bill_mail || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.bill_mail || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Bill Courier</p>
-                <p className="text-sm text-gray-900">{stageData.bill_courier || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.bill_courier || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Courier Date</p>
@@ -338,7 +338,7 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Acknowledge Name</p>
-                <p className="text-sm text-gray-900">{stageData.acknowledge_name || 'N/A'}</p>
+                <p className="text-sm text-gray-900">{stageData.acknowledge_name || ''}</p>
               </div>
             </div>
           </div>

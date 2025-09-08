@@ -24,6 +24,36 @@ export default function Stage4Page() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Manual stage advancement handler
+  const handleAdvanceStage = async (jobId, targetStage) => {
+    if (!confirm(`Are you sure you want to advance this job to ${targetStage}?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/jobs/${jobId}/advance-stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ targetStage })
+      });
+
+      if (res.ok) {
+        const responseData = await res.json();
+        console.log("Stage advancement success:", responseData);
+        alert(`Job successfully advanced to ${targetStage}!`);
+        await fetchJobs(); // Refresh the jobs list
+      } else {
+        const errorData = await res.text();
+        console.error("Error advancing stage:", errorData);
+        alert("Error advancing stage: " + errorData);
+      }
+    } catch (err) {
+      console.error("Error advancing stage:", err);
+      alert("Error advancing stage");
+    }
+  };
+
   useEffect(() => {
     // Check current user
     const userData = localStorage.getItem('user');
@@ -355,6 +385,14 @@ export default function Stage4Page() {
                           >
                             {job.stage4 ? 'Update' : 'Enter'} Data
                           </button>
+                          {job.stage4 && job.current_stage === 'stage4' && (
+                            <button
+                              onClick={() => handleAdvanceStage(job.id, 'completed')}
+                              className="text-green-600 hover:text-green-900 mr-4"
+                            >
+                              Complete Job
+                            </button>
+                          )}
                           <button
                             onClick={() => window.location.href = `/pipeline/jobs/${job.id}`}
                             className="text-gray-600 hover:text-gray-900"

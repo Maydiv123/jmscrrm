@@ -19,6 +19,12 @@ module.exports = (sequelize) => {
     offloading_charges: DataTypes.FLOAT,
     transport_detention: DataTypes.FLOAT,
     dispatch_info: DataTypes.STRING,
+    // Moved from Stage 2
+    debit_note: DataTypes.STRING,
+    debit_paid_by: DataTypes.STRING,
+    duty_amount: DataTypes.FLOAT,
+    duty_paid_by: DataTypes.STRING,
+    destination_charges: DataTypes.FLOAT,
     bill_of_entry_upload: DataTypes.STRING,
     created_by: {
       type: DataTypes.INTEGER,

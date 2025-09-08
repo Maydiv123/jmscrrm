@@ -20,6 +20,7 @@ router.put('/jobs/:id/stage4', pipelineController.updateStage4);
 router.post('/jobs/:id/stage2', pipelineController.updateStage2);
 router.post('/jobs/:id/stage3', pipelineController.updateStage3);
 router.post('/jobs/:id/stage4', pipelineController.updateStage4);
+router.post('/jobs/:id/advance-stage', pipelineController.advanceJobStage);
 router.get('/jobs/:id/stage-history', pipelineController.getJobStageHistory);
 
 // File routes

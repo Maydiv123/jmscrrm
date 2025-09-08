@@ -13,6 +13,11 @@ const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const pipelineRoutes = require('./routes/pipelineRoutes');
 const consigneeRoutes = require('./routes/consigneeRoutes');
+const migrationRoutes = require('./routes/migrationRoutes');
+const ediMigrationRoutes = require('./routes/migrateEdiFields');
+const addEdiRoutes = require('./routes/addEdiFields');
+const irnSchemaRoutes = require('./routes/updateIrnSchema');
+const drnSchemaRoutes = require('./routes/updateDrnSchema');
 
 const app = express();
 
@@ -86,6 +91,11 @@ app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/pipeline', pipelineRoutes);
 app.use('/api/consignees', consigneeRoutes);
+app.use('/api/migration', migrationRoutes);
+app.use('/api/migration', ediMigrationRoutes);
+app.use('/api/migration', addEdiRoutes);
+app.use('/api/migration', irnSchemaRoutes);
+app.use('/api/migration', drnSchemaRoutes);
 
 // Test endpoint with session check
 app.get('/api/test-session', (req, res) => {

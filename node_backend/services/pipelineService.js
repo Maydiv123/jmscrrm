@@ -584,16 +584,13 @@ class PipelineService {
         );
       }
 
-      // Update job stage to stage3 automatically after data is saved
+      // Keep job in stage2 - manual advancement required
       const job = await PipelineJob.findByPk(jobId, { transaction });
       console.log("Current job stage:", job.current_stage);
       
       const previousStage = job.current_stage;
-      let newStage = "stage3";
-
-      // Always move to stage3 when stage2 data is saved
-      await job.update({ current_stage: "stage3" }, { transaction });
-      console.log("Updated job stage to stage3");
+      // Don't automatically advance to stage3 - keep in stage2 for manual control
+      console.log("Stage2 data saved - job remains in stage2 for manual advancement");
 
       // Get stage history (last 2 stages)
       const stageHistory = await JobUpdate.findAll({
@@ -603,16 +600,16 @@ class PipelineService {
         transaction
       });
 
-      // Add job update with previous stage info
+      // Add job update for stage2 data completion
       await JobUpdate.create(
         {
           job_id: jobId,
           user_id: userId,
           stage: "stage2",
-          update_type: "stage_completion",
-          message: `Stage 2 completed - Automatically moved to Stage 3`,
+          update_type: "data_update",
+          message: `Stage 2 data updated - Ready for manual advancement to Stage 3`,
           old_value: previousStage,
-          new_value: "stage3",
+          new_value: "stage2",
           previous_stage: previousStage,
           stage_history: stageHistory.map(update => ({
             stage: update.stage,
@@ -722,13 +719,12 @@ class PipelineService {
         }
       }
 
-      // Update job stage
+      // Keep job in stage3 - manual advancement required
       const job = await PipelineJob.findByPk(jobId, { transaction });
       const previousStage = job.current_stage;
       
-      // If stage3 data is being entered, move to stage4 (customer stage)
-      const newStage = "stage4";
-      await job.update({ current_stage: newStage }, { transaction });
+      // Don't automatically advance to stage4 - keep in stage3 for manual control
+      console.log("Stage3 data saved - job remains in stage3 for manual advancement");
       
       // Create empty stage4 data record for the customer
       await Stage4Data.findOrCreate({
@@ -750,14 +746,16 @@ class PipelineService {
         transaction
       });
 
-      // Add job update with previous stage info
+      // Add job update for stage3 data completion
       await JobUpdate.create(
         {
           job_id: jobId,
           user_id: userId,
           stage: "stage3",
-          update_type: "stage_change",
-          message: `Stage changed from ${previousStage} to ${newStage}`,
+          update_type: "data_update",
+          message: `Stage 3 data updated - Ready for manual advancement to Stage 4`,
+          old_value: previousStage,
+          new_value: "stage3",
           previous_stage: previousStage,
           stage_history: stageHistory.map(update => ({
             stage: update.stage,
@@ -804,15 +802,12 @@ class PipelineService {
         }, { transaction });
       }
 
-      // Update job stage to stage4 or completed
+      // Keep job in stage4 - manual advancement required
       const job = await PipelineJob.findByPk(jobId, { transaction });
       const previousStage = job.current_stage;
-      let newStage = "stage4";
-      if (stage4Data.acknowledge_date) {
-        newStage = "completed";
-      }
-
-      await job.update({ current_stage: newStage }, { transaction });
+      
+      // Don't automatically advance to completed - keep in stage4 for manual control
+      console.log("Stage4 data saved - job remains in stage4 for manual advancement");
 
       // Get stage history (last 2 stages)
       const stageHistory = await JobUpdate.findAll({
@@ -822,16 +817,16 @@ class PipelineService {
         transaction
       });
 
-      // Add job update with previous stage info
-      const message =
-        newStage === "completed" ? "Job completed" : "Stage 4 data updated";
+      // Add job update for stage4 data completion
       await JobUpdate.create(
         {
           job_id: jobId,
           user_id: userId,
           stage: "stage4",
-          update_type: "stage_change",
-          message: message,
+          update_type: "data_update",
+          message: `Stage 4 data updated - Ready for manual advancement to completed`,
+          old_value: previousStage,
+          new_value: "stage4",
           previous_stage: previousStage,
           stage_history: stageHistory.map(update => ({
             stage: update.stage,
@@ -992,6 +987,63 @@ class PipelineService {
       return true;
     } catch (error) {
       throw new Error(`Failed to delete file: ${error.message}`);
+    }
+  }
+
+  // Manual stage advancement
+  async advanceJobStage(jobId, targetStage, userId) {
+    const transaction = await PipelineJob.sequelize.transaction();
+
+    try {
+      console.log(`Manually advancing job ${jobId} to ${targetStage}`);
+
+      // Get current job
+      const job = await PipelineJob.findByPk(jobId, { transaction });
+      if (!job) {
+        throw new Error("Job not found");
+      }
+
+      const previousStage = job.current_stage;
+      
+      // Validate stage advancement
+      const validTransitions = {
+        'stage1': ['stage2'],
+        'stage2': ['stage3'],
+        'stage3': ['stage4'],
+        'stage4': ['completed']
+      };
+
+      if (!validTransitions[previousStage]?.includes(targetStage)) {
+        throw new Error(`Invalid stage transition from ${previousStage} to ${targetStage}`);
+      }
+
+      // Update job stage
+      await job.update({ current_stage: targetStage }, { transaction });
+      console.log(`Job ${jobId} advanced from ${previousStage} to ${targetStage}`);
+
+      // Add job update
+      await JobUpdate.create(
+        {
+          job_id: jobId,
+          user_id: userId,
+          stage: targetStage,
+          update_type: "stage_completion",
+          message: `Manually advanced from ${previousStage} to ${targetStage}`,
+          old_value: previousStage,
+          new_value: targetStage,
+          previous_stage: previousStage
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
+      console.log(`Job ${jobId} successfully advanced to ${targetStage}`);
+      
+      return { success: true, message: `Job advanced to ${targetStage}` };
+    } catch (error) {
+      await transaction.rollback();
+      console.error("Error advancing job stage:", error);
+      throw new Error(`Failed to advance job stage: ${error.message}`);
     }
   }
 }
