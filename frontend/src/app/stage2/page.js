@@ -397,7 +397,7 @@ export default function Stage2Page() {
     let newValue = value;
     
     if (type === 'number') {
-      newValue = value === '' ? 0 : parseFloat(value);
+      newValue = value === '' ? '' : parseFloat(value);
     }
     
     setFormData(prev => ({
@@ -746,16 +746,18 @@ export default function Stage2Page() {
                 {/* Ocean Freight */}
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Ocean Freight</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ocean Freight</label>
                     <input
-                      type="text"
+                      type="number"
                       name="ocean_freight"
-                      value={formData.ocean_freight || 0}
+                      value={formData.ocean_freight || ''}
                       onChange={handleInputChange}
                       className={`w-full border rounded-md px-3 py-2 text-black ${
                         errors.ocean_freight ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Enter amount"
+                      step="0.01"
+                      min="0"
                     />
                     {errors.ocean_freight && <p className="text-red-500 text-xs mt-1">{errors.ocean_freight}</p>}
                   </div>
