@@ -4,6 +4,8 @@ import Sidebar from "../components/Sidebar";
 
 export default function Stage4Page() {
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -23,6 +25,19 @@ export default function Stage4Page() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Search function
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    if (term.trim() === '') {
+      setFilteredJobs(jobs);
+    } else {
+      const filtered = jobs.filter(job => 
+        job.job_no.toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredJobs(filtered);
+    }
+  };
 
   // Manual stage advancement handler
   const handleAdvanceStage = async (jobId, targetStage) => {
@@ -180,7 +195,9 @@ export default function Stage4Page() {
       if (res.ok) {
         const data = await res.json();
         console.log("Received jobs data:", data);
-        setJobs(Array.isArray(data) ? data : []);
+        const jobsArray = Array.isArray(data) ? data : [];
+        setJobs(jobsArray);
+        setFilteredJobs(jobsArray);
       } else {
         const errorText = await res.text();
         console.error("Error response:", errorText);
@@ -325,9 +342,27 @@ export default function Stage4Page() {
       <div className="flex-1 ml-64">
         <div className="p-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Stage 4: Billing & Completion</h1>
-            <p className="text-gray-600 mt-2">Manage billing information and job completion</p>
+          <div className="mb-8 flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Stage 4: Billing & Completion</h1>
+              <p className="text-gray-600 mt-2">Manage billing information and job completion</p>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by Job No..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-gray-900"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* Jobs assigned to me */}
@@ -355,7 +390,7 @@ export default function Stage4Page() {
                       </td>
                     </tr>
                   ) : (
-                    jobs.map((job) => (
+                    filteredJobs.map((job) => (
                       <tr key={job.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {job.job_no}

@@ -4,6 +4,8 @@ import Sidebar from "../components/Sidebar";
 
 export default function Stage2Page() {
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -16,8 +18,6 @@ export default function Stage2Page() {
     approval_date: '',
     bill_of_entry_no: '',
     bill_of_entry_date: '',
-    ocean_freight: 0,
-    original_doct_recd_date: '',
     drn_entries: [{ 
       drn_no: '', 
       irn_entries: [{ 
@@ -30,13 +30,23 @@ export default function Stage2Page() {
     gateway_igm: '',
     gateway_igm_date: '',
     local_igm: '',
-    local_igm_date: '',
-    // EDI Information
-    edi_job_no: '',
-    edi_date: ''
+    local_igm_date: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Search function
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    if (term.trim() === '') {
+      setFilteredJobs(jobs);
+    } else {
+      const filtered = jobs.filter(job => 
+        job.job_no.toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredJobs(filtered);
+    }
+  };
 
   useEffect(() => {
     // Check current user
@@ -154,17 +164,6 @@ export default function Stage2Page() {
       case 'bill_of_entry_date':
         if (value && new Date(value) > new Date()) error = 'Bill of entry date cannot be in the future';
         break;
-      case 'ocean_freight':
-        if (value && value !== '') {
-          const numValue = parseFloat(value);
-          if (isNaN(numValue)) error = 'Ocean freight must be a valid number';
-          else if (numValue < 0) error = 'Ocean freight cannot be negative';
-          else if (numValue > 999999.99) error = 'Ocean freight cannot exceed 999,999.99';
-        }
-        break;
-      case 'original_doct_recd_date':
-        if (value && new Date(value) > new Date()) error = 'Original documents received date cannot be in the future';
-        break;
       case 'drn_entries':
         // Validate all DRN entries
         const drnErrors = formData.drn_entries.map((entry, drnIndex) => {
@@ -199,12 +198,6 @@ export default function Stage2Page() {
         break;
       case 'local_igm_date':
         if (value && new Date(value) > new Date()) error = 'Local IGM date cannot be in the future';
-        break;
-      case 'edi_job_no':
-        if (value && value.length < 2) error = 'EDI Job No must be at least 2 characters';
-        break;
-      case 'edi_date':
-        if (value && new Date(value) > new Date()) error = 'EDI date cannot be in the future';
         break;
       default:
         break;
@@ -267,7 +260,9 @@ export default function Stage2Page() {
       if (res.ok) {
         const data = await res.json();
         console.log("Received jobs data:", data);
-        setJobs(Array.isArray(data) ? data : []);
+        const jobsArray = Array.isArray(data) ? data : [];
+        setJobs(jobsArray);
+        setFilteredJobs(jobsArray);
       } else {
         const errorText = await res.text();
         console.error("Error response:", errorText);
@@ -300,8 +295,6 @@ export default function Stage2Page() {
             approval_date: completeJob.stage2.approval_date ? completeJob.stage2.approval_date.split('T')[0] : '',
             bill_of_entry_no: completeJob.stage2.bill_of_entry_no || '',
             bill_of_entry_date: completeJob.stage2.bill_of_entry_date ? completeJob.stage2.bill_of_entry_date.split('T')[0] : '',
-            ocean_freight: completeJob.stage2.ocean_freight || 0,
-            original_doct_recd_date: completeJob.stage2.original_doct_recd_date ? completeJob.stage2.original_doct_recd_date.split('T')[0] : '',
             drn_entries: completeJob.stage2.drn_entries ? 
               completeJob.stage2.drn_entries.map(entry => ({
                 drn_no: entry.drn_no || '',
@@ -318,10 +311,7 @@ export default function Stage2Page() {
             gateway_igm: completeJob.stage2.gateway_igm || completeJob.Stage1?.gateway_igm || completeJob.stage1?.gateway_igm || '',
             gateway_igm_date: completeJob.stage2.gateway_igm_date ? completeJob.stage2.gateway_igm_date.split('T')[0] : (completeJob.Stage1?.gateway_igm_date ? completeJob.Stage1.gateway_igm_date.split('T')[0] : (completeJob.stage1?.gateway_igm_date ? completeJob.stage1.gateway_igm_date.split('T')[0] : '')),
             local_igm: completeJob.stage2.local_igm || completeJob.Stage1?.local_igm || completeJob.stage1?.local_igm || '',
-            local_igm_date: completeJob.stage2.local_igm_date ? completeJob.stage2.local_igm_date.split('T')[0] : (completeJob.Stage1?.local_igm_date ? completeJob.Stage1.local_igm_date.split('T')[0] : (completeJob.stage1?.local_igm_date ? completeJob.stage1.local_igm_date.split('T')[0] : '')),
-            // EDI Information
-            edi_job_no: completeJob.stage2.edi_job_no || '',
-            edi_date: completeJob.stage2.edi_date ? completeJob.stage2.edi_date.split('T')[0] : ''
+            local_igm_date: completeJob.stage2.local_igm_date ? completeJob.stage2.local_igm_date.split('T')[0] : (completeJob.Stage1?.local_igm_date ? completeJob.Stage1.local_igm_date.split('T')[0] : (completeJob.stage1?.local_igm_date ? completeJob.stage1.local_igm_date.split('T')[0] : ''))
           });
         } else {
           // Reset form for new entry
@@ -332,18 +322,13 @@ export default function Stage2Page() {
             approval_date: '',
             bill_of_entry_no: '', 
             bill_of_entry_date: '', 
-            ocean_freight: 0,
-            original_doct_recd_date: '', 
             drn_entries: [{ drn_no: '', irn_entries: [{ irn_number: '', documents_type: '' }] }],
             // Initialize Stage 1 fields
             invoice_no: completeJob.Stage1?.invoice_no || completeJob.stage1?.invoice_no || '',
             gateway_igm: completeJob.Stage1?.gateway_igm || completeJob.stage1?.gateway_igm || '',
             gateway_igm_date: completeJob.Stage1?.gateway_igm_date ? completeJob.Stage1.gateway_igm_date.split('T')[0] : (completeJob.stage1?.gateway_igm_date ? completeJob.stage1.gateway_igm_date.split('T')[0] : ''),
             local_igm: completeJob.Stage1?.local_igm || completeJob.stage1?.local_igm || '',
-            local_igm_date: completeJob.Stage1?.local_igm_date ? completeJob.Stage1.local_igm_date.split('T')[0] : (completeJob.stage1?.local_igm_date ? completeJob.stage1.local_igm_date.split('T')[0] : ''),
-            // EDI Information
-            edi_job_no: '',
-            edi_date: ''
+            local_igm_date: completeJob.Stage1?.local_igm_date ? completeJob.Stage1.local_igm_date.split('T')[0] : (completeJob.stage1?.local_igm_date ? completeJob.stage1.local_igm_date.split('T')[0] : '')
           });
         }
       } else {
@@ -357,8 +342,6 @@ export default function Stage2Page() {
           approval_date: '',
           bill_of_entry_no: '', 
           bill_of_entry_date: '', 
-          ocean_freight: 0,
-          original_doct_recd_date: '', 
           drn_entries: [{ drn_no: '', irn_entries: [{ irn_number: '', documents_type: '' }] }],
           invoice_no: '',
           gateway_igm: '',
@@ -378,8 +361,6 @@ export default function Stage2Page() {
         approval_date: '',
         bill_of_entry_no: '', 
         bill_of_entry_date: '', 
-        ocean_freight: 0,
-        original_doct_recd_date: '', 
         drn_entries: [{ drn_no: '', irn_entries: [{ irn_number: '', documents_type: '' }] }],
         invoice_no: '',
         gateway_igm: '',
@@ -532,9 +513,27 @@ export default function Stage2Page() {
       <div className="flex-1 ml-64">
         <div className="p-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Stage 2: Customs & Documentation</h1>
-            <p className="text-gray-600 mt-2">Process customs documentation and filing requirements</p>
+          <div className="mb-8 flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Stage 2: Customs & Documentation</h1>
+              <p className="text-gray-600 mt-2">Process customs documentation and filing requirements</p>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by Job No..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-gray-900"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* Jobs assigned to me */}
@@ -562,7 +561,7 @@ export default function Stage2Page() {
                       </td>
                     </tr>
                   ) : (
-                    jobs.map((job) => (
+                    filteredJobs.map((job) => (
                       <tr key={job.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {job.job_no}
@@ -743,25 +742,6 @@ export default function Stage2Page() {
                   </div>
                 </div>
 
-                {/* Ocean Freight */}
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ocean Freight</label>
-                    <input
-                      type="number"
-                      name="ocean_freight"
-                      value={formData.ocean_freight || ''}
-                      onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 text-black ${
-                        errors.ocean_freight ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter amount"
-                      step="0.01"
-                      min="0"
-                    />
-                    {errors.ocean_freight && <p className="text-red-500 text-xs mt-1">{errors.ocean_freight}</p>}
-                  </div>
-                </div>
 
                 {/* Multiple DRN Entries */}
                 <div className="space-y-4">
@@ -868,22 +848,6 @@ export default function Stage2Page() {
                   {errors.drn_entries && <p className="text-red-500 text-xs mt-1">{errors.drn_entries}</p>}
                 </div>
 
-                {/* Original Document Received Date */}
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Original Document Received Date</label>
-                    <input
-                      type="date"
-                      name="original_doct_recd_date"
-                      value={formData.original_doct_recd_date || ''}
-                      onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 text-black ${
-                        errors.original_doct_recd_date ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.original_doct_recd_date && <p className="text-red-500 text-xs mt-1">{errors.original_doct_recd_date}</p>}
-                  </div>
-                </div>
 
 
                 {/* Invoice No */}
@@ -963,36 +927,6 @@ export default function Stage2Page() {
                   </div>
                 </div>
 
-                {/* EDI Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Job No</label>
-                    <input
-                      type="text"
-                      name="edi_job_no"
-                      value={formData.edi_job_no || ''}
-                      onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 text-black ${
-                        errors.edi_job_no ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter EDI Job Number"
-                    />
-                    {errors.edi_job_no && <p className="text-red-500 text-xs mt-1">{errors.edi_job_no}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">EDI Date</label>
-                    <input
-                      type="date"
-                      name="edi_date"
-                      value={formData.edi_date || ''}
-                      onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 text-black ${
-                        errors.edi_date ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.edi_date && <p className="text-red-500 text-xs mt-1">{errors.edi_date}</p>}
-                  </div>
-                </div>
 
                 <div className="flex justify-end pt-6">
                   <div className="flex gap-4">

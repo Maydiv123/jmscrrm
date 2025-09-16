@@ -31,6 +31,7 @@ export default function Sidebar({ userRole, isAdmin }) {
     { name: "Analytics", href: "/analytics", icon: "📈" },
     { name: "Reports", href: "/reports", icon: "📋" },
     { name: "Consignee", href: "/consignee", icon: "🏢" },
+    { name: "Shipper", href: "/shipper", icon: "🚢" },
   ];
 
   const subadminMenuItems = [
@@ -38,6 +39,8 @@ export default function Sidebar({ userRole, isAdmin }) {
     // { name: "My Tasks", href: getTaskPage(currentUserRole), icon: "✅" },
     { name: "Pipeline", href: "/pipeline", icon: "🔄" },
     { name: "Reports", href: "/reports", icon: "📋" },
+    { name: "Consignee", href: "/consignee", icon: "🏢" },
+    { name: "Shipper", href: "/shipper", icon: "🚢" },
     { name: "Profile", href: "/profile", icon: "👤" },
   ];
 
@@ -46,6 +49,8 @@ export default function Sidebar({ userRole, isAdmin }) {
     { name: "My Tasks", href: getTaskPage(currentUserRole), icon: "✅" },
     { name: "Pipeline", href: "/pipeline", icon: "🔄" },
     { name: "Reports", href: "/reports", icon: "📋" },
+    { name: "Consignee", href: "/consignee", icon: "🏢" },
+    { name: "Shipper", href: "/shipper", icon: "🚢" },
     { name: "Profile", href: "/profile", icon: "👤" },
   ];
 
@@ -55,6 +60,7 @@ export default function Sidebar({ userRole, isAdmin }) {
     { name: "Pipeline", href: "/pipeline", icon: "🔄" },
     { name: "Reports", href: "/reports", icon: "📋" },
     { name: "Consignee", href: "/consignee", icon: "🏢" },
+    { name: "Shipper", href: "/shipper", icon: "🚢" },
     { name: "Profile", href: "/profile", icon: "👤" },
   ];
 

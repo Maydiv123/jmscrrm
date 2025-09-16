@@ -18,12 +18,7 @@ module.exports = (sequelize) => {
     approval_date: DataTypes.DATE,
     bill_of_entry_no: DataTypes.STRING,
     bill_of_entry_date: DataTypes.DATE,
-    ocean_freight: DataTypes.FLOAT,
-    original_doct_recd_date: DataTypes.DATE,
     drn_entries: DataTypes.JSON, // Changed to JSON to store array of DRN entries with IRN numbers
-    // Moved from Stage 3
-    edi_job_no: DataTypes.STRING,
-    edi_date: DataTypes.DATE,
     document_1: DataTypes.STRING,
     document_2: DataTypes.STRING,
     document_3: DataTypes.STRING,

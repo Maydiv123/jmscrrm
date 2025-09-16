@@ -386,6 +386,17 @@ export default function JobDetailsPage() {
                     )}
                   </div>
                 )}
+                {job.stage1 && job.current_stage === 'stage1' && (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleAdvanceStage(job.id, 'stage2')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                      title="Advance to Stage 2"
+                    >
+                      Advance to Stage 2
+                    </button>
+                  </div>
+                )}
               </h2>
 
               {!job.stage1 ? (
@@ -617,14 +628,6 @@ export default function JobDetailsPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Ocean Freight
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {formatCurrency(job.stage2.ocean_freight)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
                         DRN No
                       </p>
                       <p className="text-sm text-gray-900">
@@ -637,22 +640,6 @@ export default function JobDetailsPage() {
                       </p>
                       <p className="text-sm text-gray-900">
                         {job.stage2.irn_no || ""}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        EDI Job No
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {job.stage2.edi_job_no || ""}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        EDI Date
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {formatDate(job.stage2.edi_date)}
                       </p>
                     </div>
                   </div>
@@ -832,6 +819,38 @@ export default function JobDetailsPage() {
                       </p>
                       <p className="text-sm text-gray-900">
                         {job.stage3.dispatch_info || ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Original Document Received Date
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(job.stage3.original_doct_recd_date)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Ocean Freight
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {formatCurrency(job.stage3.ocean_freight)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        EDI Job No
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {job.stage3.edi_job_no || ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        EDI Date
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(job.stage3.edi_date)}
                       </p>
                     </div>
                   </div>
@@ -1965,6 +1984,51 @@ export default function JobDetailsPage() {
                         type="text"
                         value={editFormData.updated_by || ""}
                         onChange={(e) => handleEditFormChange("updated_by", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Original Document Received Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.original_doct_recd_date ? editFormData.original_doct_recd_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("original_doct_recd_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ocean Freight
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.ocean_freight || ""}
+                        onChange={(e) => handleEditFormChange("ocean_freight", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        EDI Job No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.edi_job_no || ""}
+                        onChange={(e) => handleEditFormChange("edi_job_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        EDI Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.edi_date ? editFormData.edi_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("edi_date", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>

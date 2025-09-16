@@ -5,6 +5,8 @@ import Sidebar from "../components/Sidebar";
 
 export default function PipelinePage() {
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -27,7 +29,7 @@ export default function PipelinePage() {
     mbl_date: '',
     shipping_line: '',
     forwarder: '',
-    weight: 0,
+    weight: '',
     packages: 0,
     invoice_no: '',
     invoice_date: '',
@@ -49,12 +51,26 @@ export default function PipelinePage() {
   });
   const [errors, setErrors] = useState({});
   const [consignees, setConsignees] = useState([]);
+  const [shippers, setShippers] = useState([]);
   const [lastConsigneeUpdate, setLastConsigneeUpdate] = useState(null);
+  const [lastShipperUpdate, setLastShipperUpdate] = useState(null);
+  const [nextJobNumber, setNextJobNumber] = useState('');
 
   useEffect(() => {
     fetchData();
     fetchConsignees();
+    fetchShippers();
   }, []);
+
+  // Update form data when nextJobNumber is fetched
+  useEffect(() => {
+    if (nextJobNumber && showCreateModal) {
+      setFormData(prev => ({
+        ...prev,
+        job_no: nextJobNumber
+      }));
+    }
+  }, [nextJobNumber, showCreateModal]);
 
 
 
@@ -74,7 +90,7 @@ export default function PipelinePage() {
       // Check if API URL is available
       if (!process.env.NEXT_PUBLIC_API_URL) {
         console.log("API URL not configured, using sample data");
-        setJobs([
+        const sampleJobs = [
           {
             id: 1,
             job_no: 'JOB001',
@@ -97,7 +113,9 @@ export default function PipelinePage() {
               shipper: 'Ocean Freight Solutions'
             }
           }
-        ]);
+        ];
+        setJobs(sampleJobs);
+        setFilteredJobs(sampleJobs);
         setUsers([]);
         setLoading(false);
         return;
@@ -115,7 +133,7 @@ export default function PipelinePage() {
           ]);
         } catch (err) {
           console.log("Network error, using sample data");
-          setJobs([
+          const sampleJobs = [
             {
               id: 1,
               job_no: 'JOB001',
@@ -138,7 +156,9 @@ export default function PipelinePage() {
                 shipper: 'Ocean Freight Solutions'
               }
             }
-          ]);
+          ];
+          setJobs(sampleJobs);
+          setFilteredJobs(sampleJobs);
           setUsers([]);
           setLoading(false);
           return;
@@ -151,7 +171,7 @@ export default function PipelinePage() {
           usersRes = { ok: true, status: 200 }; // Mock successful response for users
         } catch (err) {
           console.log("Network error, using sample data");
-          setJobs([
+          const sampleJobs = [
             {
               id: 1,
               job_no: 'JOB001',
@@ -163,7 +183,9 @@ export default function PipelinePage() {
                 shipper: 'Global Shipping Ltd.'
               }
             }
-          ]);
+          ];
+          setJobs(sampleJobs);
+          setFilteredJobs(sampleJobs);
           setUsers([]);
           setLoading(false);
           return;
@@ -179,7 +201,9 @@ export default function PipelinePage() {
       if (jobsRes.ok) {
         const jobsData = await jobsRes.json();
         console.log("Pipeline received jobs:", jobsData);
-        setJobs(Array.isArray(jobsData) ? jobsData : []);
+        const jobsArray = Array.isArray(jobsData) ? jobsData : [];
+        setJobs(jobsArray);
+        setFilteredJobs(jobsArray);
         
         // Only fetch users data if admin/subadmin and users request was successful
         if ((user.is_admin || user.role === 'subadmin') && usersRes.ok) {
@@ -191,7 +215,7 @@ export default function PipelinePage() {
         }
       } else {
         console.log("API not available, using sample data");
-        setJobs([
+        const sampleJobs = [
           {
             id: 1,
             job_no: 'JOB001',
@@ -214,12 +238,14 @@ export default function PipelinePage() {
               shipper: 'Ocean Freight Solutions'
             }
           }
-        ]);
+        ];
+        setJobs(sampleJobs);
+        setFilteredJobs(sampleJobs);
         setUsers([]);
       }
     } catch (err) {
       console.log("Unexpected error, using sample data");
-      setJobs([
+      const sampleJobs = [
         {
           id: 1,
           job_no: 'JOB001',
@@ -231,10 +257,40 @@ export default function PipelinePage() {
             shipper: 'Global Shipping Ltd.'
           }
         }
-      ]);
+      ];
+      setJobs(sampleJobs);
+      setFilteredJobs(sampleJobs);
       setUsers([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Fetch next job number
+  async function fetchNextJobNumber() {
+    try {
+      // Check if API URL is available
+      if (!process.env.NEXT_PUBLIC_API_URL) {
+        console.log("API URL not configured, using default job number");
+        setNextJobNumber('1');
+        return;
+      }
+
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/jobs/next-number", {
+        credentials: "include"
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log("Fetched next job number:", data.nextJobNumber);
+        setNextJobNumber(data.nextJobNumber);
+      } else {
+        console.log("API not available, using default job number");
+        setNextJobNumber('1');
+      }
+    } catch (err) {
+      console.log("Network error, using default job number");
+      setNextJobNumber('1');
     }
   }
 
@@ -281,7 +337,51 @@ export default function PipelinePage() {
     }
   }
 
+  // Fetch shippers for dropdown
+  async function fetchShippers() {
+    try {
+      // Check if API URL is available
+      if (!process.env.NEXT_PUBLIC_API_URL) {
+        console.log("API URL not configured, using sample data");
+        setShippers([
+          { id: 1, name: 'Ocean Shipping Lines', address: 'Port Authority, Mumbai' },
+          { id: 2, name: 'Global Cargo Ltd.', address: 'Harbor Terminal, Chennai' },
+          { id: 3, name: 'Maritime Logistics', address: 'Port Complex, Kolkata' },
+          { id: 4, name: 'International Freight', address: 'Container Terminal, Kochi' }
+        ]);
+        return;
+      }
 
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/shippers", {
+        credentials: "include"
+      });
+      
+      if (res.ok) {
+        const shippersData = await res.json();
+        console.log("Fetched shippers:", shippersData);
+        setShippers(Array.isArray(shippersData) ? shippersData : []);
+        setLastShipperUpdate(new Date());
+      } else {
+        console.log("API not available, using sample data");
+        // Fallback to sample data if API fails
+        setShippers([
+          { id: 1, name: 'Ocean Shipping Lines', address: 'Port Authority, Mumbai' },
+          { id: 2, name: 'Global Cargo Ltd.', address: 'Harbor Terminal, Chennai' },
+          { id: 3, name: 'Maritime Logistics', address: 'Port Complex, Kolkata' },
+          { id: 4, name: 'International Freight', address: 'Container Terminal, Kochi' }
+        ]);
+      }
+    } catch (err) {
+      console.log("Network error, using sample data");
+      // Fallback to sample data if network fails
+      setShippers([
+        { id: 1, name: 'Ocean Shipping Lines', address: 'Port Authority, Mumbai' },
+        { id: 2, name: 'Global Cargo Ltd.', address: 'Harbor Terminal, Chennai' },
+        { id: 3, name: 'Maritime Logistics', address: 'Port Complex, Kolkata' },
+        { id: 4, name: 'International Freight', address: 'Container Terminal, Kochi' }
+      ]);
+    }
+  }
 
   // Validation functions
   const validateField = (name, value) => {
@@ -346,8 +446,12 @@ export default function PipelinePage() {
         if (value && value.length < 2) error = 'Forwarder must be at least 2 characters';
         break;
       case 'weight':
-        if (value < 0) error = 'Weight cannot be negative';
-        else if (value > 999999.99) error = 'Weight cannot exceed 999,999.99';
+        if (value && value !== '') {
+          const numValue = parseFloat(value);
+          if (isNaN(numValue)) error = 'Weight must be a valid number';
+          else if (numValue < 0) error = 'Weight cannot be negative';
+          else if (numValue > 999999.99) error = 'Weight cannot exceed 999,999.99';
+        }
         break;
       case 'packages':
         if (value < 0) error = 'Number of packages cannot be negative';
@@ -375,7 +479,7 @@ export default function PipelinePage() {
         if (value && value.length < 3) error = 'Commodity must be at least 3 characters';
         break;
       case 'eta':
-        if (value && new Date(value) < new Date()) error = 'ETA cannot be in the past';
+        // No validation - users can choose past, present, or future dates
         break;
       case 'current_status':
         if (value && value.length < 3) error = 'Current status must be at least 3 characters';
@@ -456,8 +560,13 @@ export default function PipelinePage() {
     const { name, value, type } = e.target;
     let newValue = value;
     
+    // Only convert to number for actual number inputs, not text inputs with numeric values
     if (type === 'number') {
       newValue = value === '' ? 0 : parseFloat(value);
+    }
+    // For text inputs (like weight), keep the string value to preserve decimals
+    else {
+      newValue = value;
     }
     
     setFormData(prev => ({
@@ -549,6 +658,38 @@ export default function PipelinePage() {
           {lastConsigneeUpdate && (
             <p className="text-xs text-gray-500 mt-1">
               Last updated: {lastConsigneeUpdate.toLocaleTimeString()}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    // Special case for shipper field - show dropdown with shippers
+    if (name === 'shipper') {
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {label} {required && <span className="text-red-500">*</span>}
+          </label>
+          <select
+            name={name}
+            value={formData[name]}
+            onChange={handleInputChange}
+            className={inputClass}
+          >
+            <option value="">Select a shipper</option>
+            {shippers.map((shipper) => (
+              <option key={shipper.id} value={shipper.name}>
+                {shipper.name} - {shipper.address}
+              </option>
+            ))}
+          </select>
+          {isError && (
+            <p className="text-red-500 text-xs mt-1">{isError}</p>
+          )}
+          {lastShipperUpdate && (
+            <p className="text-xs text-gray-500 mt-1">
+              Last updated: {lastShipperUpdate.toLocaleTimeString()}
             </p>
           )}
         </div>
@@ -659,7 +800,7 @@ export default function PipelinePage() {
         mbl_date: formData.mbl_date || "",
         shipping_line: formData.shipping_line || "",
         forwarder: formData.forwarder || "",
-        weight: formData.weight || 0,
+        weight: formData.weight || '',
         packages: formData.packages || 0,
         invoice_no: formData.invoice_no || "",
         invoice_date: formData.invoice_date || "",
@@ -687,11 +828,12 @@ export default function PipelinePage() {
          setShowCreateModal(false);
          setErrors({});
          setIsSubmitting(false);
+         setNextJobNumber('');
          setFormData({
           job_no: '', job_date: '', edi_job_no: '', edi_date: '', consignee: '', shipper: '',
           port_of_discharge: '', final_place_of_delivery: '', port_of_loading: '', country_of_shipment: '',
           hbl_no: '', hbl_date: '', mbl_no: '', mbl_date: '', shipping_line: '', forwarder: '',
-          weight: 0, packages: 0, invoice_no: '', invoice_date: '', gateway_igm: '', gateway_igm_date: '',
+          weight: '', packages: 0, invoice_no: '', invoice_date: '', gateway_igm: '', gateway_igm_date: '',
           local_igm: '', local_igm_date: '', commodity: '', eta: '', current_status: '',
           containers: [], notification_email: ''
         });
@@ -761,7 +903,7 @@ export default function PipelinePage() {
       mbl_date: job.stage1?.mbl_date || '',
       shipping_line: job.stage1?.shipping_line || '',
       forwarder: job.stage1?.forwarder || '',
-      weight: job.stage1?.weight || 0,
+      weight: job.stage1?.weight || '',
       packages: job.stage1?.packages || 0,
       invoice_no: job.stage1?.invoice_no || '',
       invoice_date: job.stage1?.invoice_date || '',
@@ -796,7 +938,7 @@ export default function PipelinePage() {
       
       const updateData = {
         ...formData,
-        weight: parseInt(formData.weight) || 0,
+        weight: parseFloat(formData.weight) || 0,
         packages: parseInt(formData.packages) || 0,
         containers: validContainers
       };
@@ -817,7 +959,7 @@ export default function PipelinePage() {
           job_no: '', job_date: '', edi_job_no: '', edi_date: '', consignee: '', shipper: '',
           port_of_discharge: '', final_place_of_delivery: '', port_of_loading: '', country_of_shipment: '',
           hbl_no: '', hbl_date: '', mbl_no: '', mbl_date: '', shipping_line: '', forwarder: '',
-          weight: 0, packages: 0, invoice_no: '', invoice_date: '', gateway_igm: '', gateway_igm_date: '',
+          weight: '', packages: 0, invoice_no: '', invoice_date: '', gateway_igm: '', gateway_igm_date: '',
           local_igm: '', local_igm_date: '', commodity: '', eta: '', current_status: '',
           containers: [], notification_email: ''
         });
@@ -854,6 +996,19 @@ export default function PipelinePage() {
   // Validation states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+
+  // Search function
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    if (term.trim() === '') {
+      setFilteredJobs(jobs);
+    } else {
+      const filtered = jobs.filter(job => 
+        job.job_no.toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredJobs(filtered);
+    }
+  };
 
   useEffect(() => {
     // Get user info from localStorage
@@ -900,15 +1055,38 @@ export default function PipelinePage() {
                 }
               </p>
             </div>
-                         {(isAdmin || isSubadmin || userRole === 'stage1_employee') && (
-               <button
-                 onClick={() => setShowCreateModal(true)}
-                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-               >
-                 <span>+</span>
-                 Create New Job
-               </button>
-             )}
+            <div className="flex items-center gap-4">
+              {/* Search Bar - Only for Admin and Subadmin */}
+              {(isAdmin || isSubadmin) && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search by Job No..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-gray-900"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+              
+              {(isAdmin || isSubadmin || userRole === 'stage1_employee') && (
+                <button
+                  onClick={async () => {
+                    await fetchNextJobNumber();
+                    setShowCreateModal(true);
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <span>+</span>
+                  Create New Job
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -957,7 +1135,7 @@ export default function PipelinePage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {jobs.map((job) => (
+                {filteredJobs.map((job) => (
                   <tr key={job.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {job.job_no}
@@ -1020,6 +1198,7 @@ export default function PipelinePage() {
                               setShowCreateModal(false);
                               setErrors({});
                               setIsSubmitting(false);
+                              setNextJobNumber('');
                             }}
                             className="text-gray-400 hover:text-gray-600"
                           >
@@ -1203,7 +1382,10 @@ export default function PipelinePage() {
                                  <div className="flex justify-end gap-4 pt-6">
                    <button
                      type="button"
-                     onClick={() => setShowCreateModal(false)}
+                     onClick={() => {
+                       setShowCreateModal(false);
+                       setNextJobNumber('');
+                     }}
                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                      disabled={isSubmitting}
                    >

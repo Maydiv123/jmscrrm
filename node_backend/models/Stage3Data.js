@@ -20,6 +20,10 @@ module.exports = (sequelize) => {
     transport_detention: DataTypes.FLOAT,
     dispatch_info: DataTypes.STRING,
     // Moved from Stage 2
+    ocean_freight: DataTypes.FLOAT,
+    edi_job_no: DataTypes.STRING,
+    edi_date: DataTypes.DATE,
+    original_doct_recd_date: DataTypes.DATE,
     debit_note: DataTypes.STRING,
     debit_paid_by: DataTypes.STRING,
     duty_amount: DataTypes.FLOAT,

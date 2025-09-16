@@ -174,6 +174,11 @@ class PipelineService {
             attributes: { exclude: ["created_at", "updated_at"] },
           },
           {
+            model: Stage1Container,
+            as: "Stage1Containers",
+            attributes: { exclude: ["created_at", "updated_at"] },
+          },
+          {
             model: Stage2Data,
             as: "Stage2",
             attributes: { exclude: ["created_at", "updated_at"] },
@@ -220,6 +225,45 @@ class PipelineService {
     }
   }
 
+  // Get next job number by finding highest existing job number and incrementing
+  async getNextJobNumber() {
+    try {
+      // Find the highest job number that matches the pattern (numeric or JOB followed by numbers)
+      const jobs = await PipelineJob.findAll({
+        attributes: ['job_no'],
+        order: [['id', 'DESC']],
+        limit: 100 // Get recent jobs to find the highest number
+      });
+
+      let maxNumber = 0;
+      
+      for (const job of jobs) {
+        const jobNo = job.job_no;
+        let number = 0;
+        
+        // Try to extract number from job_no
+        if (/^JOB\d+$/i.test(jobNo)) {
+          // Format: JOB123
+          number = parseInt(jobNo.replace(/^JOB/i, ''));
+        } else if (/^\d+$/.test(jobNo)) {
+          // Format: 123
+          number = parseInt(jobNo);
+        }
+        
+        if (number > maxNumber) {
+          maxNumber = number;
+        }
+      }
+      
+      // Return next number
+      return (maxNumber + 1).toString();
+    } catch (error) {
+      console.error('Error getting next job number:', error);
+      // Fallback to timestamp-based number
+      return Date.now().toString().slice(-6);
+    }
+  }
+
   // Create new job with stage1 data
   async createJob(stage1Data, createdBy) {
     const transaction = await PipelineJob.sequelize.transaction();
@@ -227,12 +271,19 @@ class PipelineService {
     try {
       console.log('Creating job with data:', JSON.stringify(stage1Data, null, 2));
       
+      // Auto-generate job number if not provided
+      if (!stage1Data.job_no || stage1Data.job_no.trim() === '') {
+        const nextJobNumber = await this.getNextJobNumber();
+        stage1Data.job_no = nextJobNumber;
+        console.log('Auto-generated job number:', nextJobNumber);
+      }
+      
       // Validate and convert data types
       const validatedData = this.validateAndConvertStage1Data(stage1Data);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
 
-      // All jobs go directly to stage 2
-      const initialStage = "stage2";
+      // Jobs start in stage1 and need manual advancement
+      const initialStage = "stage1";
       
       console.log('Creating pipeline job with:', {
         job_no: validatedData.job_no,
@@ -987,6 +1038,50 @@ class PipelineService {
       return true;
     } catch (error) {
       throw new Error(`Failed to delete file: ${error.message}`);
+    }
+  }
+
+  // Get next job number
+  async getNextJobNumber() {
+    try {
+      // Find the highest job number in the database
+      const highestJob = await PipelineJob.findOne({
+        order: [['job_no', 'DESC']],
+        attributes: ['job_no']
+      });
+
+      if (!highestJob) {
+        // If no jobs exist, start with 1
+        return '1';
+      }
+
+      const jobNumber = highestJob.job_no;
+      console.log('Highest job number found:', jobNumber);
+
+      // Handle different job number formats
+      if (jobNumber.startsWith('JOB')) {
+        // Extract numeric part from JOB001, JOB002, etc.
+        const numericPart = parseInt(jobNumber.substring(3));
+        if (!isNaN(numericPart)) {
+          const nextNumber = numericPart + 1;
+          return `JOB${nextNumber.toString().padStart(3, '0')}`;
+        }
+      }
+
+      // Try to extract numeric part from any job number
+      const numericMatch = jobNumber.match(/\d+/);
+      if (numericMatch) {
+        const numericPart = parseInt(numericMatch[0]);
+        if (!isNaN(numericPart)) {
+          return (numericPart + 1).toString();
+        }
+      }
+
+      // If no numeric part found, start with 1
+      return '1';
+    } catch (error) {
+      console.error('Error getting next job number:', error);
+      throw new Error(`Failed to get next job number: ${error.message}`);
     }
   }
 

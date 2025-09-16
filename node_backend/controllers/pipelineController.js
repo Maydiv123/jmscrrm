@@ -96,6 +96,26 @@ class PipelineController {
     }
   };
 
+  // Get next job number
+  async getNextJobNumber(req, res) {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Check if user is admin, subadmin, or stage1_employee
+      if (!req.user.isAdmin && req.user.role !== "subadmin" && req.user.role !== "stage1_employee") {
+        return res.status(403).json({ error: "Access denied. Only admin, subadmin, and stage1 employees can access this." });
+      }
+
+      const nextJobNumber = await pipelineService.getNextJobNumber();
+      res.json({ nextJobNumber });
+    } catch (error) {
+      console.error('GetNextJobNumber error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   // Create new job
   async createJob(req, res) {
     try {
@@ -478,6 +498,21 @@ class PipelineController {
       res.status(500).json({ error: error.message });
     }
   };
+
+  // Get next job number
+  async getNextJobNumber(req, res) {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const nextJobNumber = await pipelineService.getNextJobNumber();
+      res.json({ nextJobNumber });
+    } catch (error) {
+      console.error("Error getting next job number:", error);
+      res.status(500).json({ error: error.message });
+    }
+  }
 
   // Helper methods
   static hasJobAccess(req, job) {
