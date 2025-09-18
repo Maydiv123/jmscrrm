@@ -333,6 +333,13 @@ export default function Stage3Page() {
       if (res.ok) {
         const completeJob = await res.json();
         console.log("Complete job data for Stage 3:", completeJob);
+        console.log("Stage1 data:", completeJob.stage1);
+        console.log("Stage1 data (capital):", completeJob.Stage1);
+        console.log("Stage1Containers data (capital):", completeJob.Stage1Containers);
+        console.log("Container field in stage1:", completeJob.stage1?.container_no);
+        console.log("Container field in Stage1:", completeJob.Stage1?.container_no);
+        console.log("Size field in stage1:", completeJob.stage1?.container_size);
+        console.log("Size field in Stage1:", completeJob.Stage1?.container_size);
         setSelectedJob(completeJob);
         
         // Pre-fill form with existing stage3 data if available
@@ -615,18 +622,17 @@ export default function Stage3Page() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div><strong>Consignee:</strong> {selectedJob.stage1?.consignee || selectedJob.Stage1?.consignee || '-'}</div>
                   <div><strong>Container:</strong> {
-                    selectedJob.stage1Containers && selectedJob.stage1Containers.length > 0 
-                      ? selectedJob.stage1Containers.map(container => container.container_no).join(', ')
+                    (selectedJob.Stage1Containers && selectedJob.Stage1Containers.length > 0) 
+                      ? selectedJob.Stage1Containers.map(container => container.container_no).join(', ')
                       : selectedJob.stage1?.container_no || selectedJob.Stage1?.container_no || '-'
                   }</div>
                   <div><strong>Size:</strong> {
-                    selectedJob.stage1Containers && selectedJob.stage1Containers.length > 0 
-                      ? selectedJob.stage1Containers.map(container => container.container_size).join(', ')
+                    (selectedJob.Stage1Containers && selectedJob.Stage1Containers.length > 0) 
+                      ? selectedJob.Stage1Containers.map(container => container.container_size).join(', ')
                       : selectedJob.stage1?.container_size || selectedJob.Stage1?.container_size || '-'
                   }</div>
                   <div><strong>Bill of Entry:</strong> {selectedJob.stage2?.bill_of_entry_no || selectedJob.Stage2?.bill_of_entry_no || '-'}</div>
                   <div><strong>HSN Code:</strong> {selectedJob.stage2?.hsn_code || selectedJob.Stage2?.hsn_code || '-'}</div>
-                  <div><strong>Duty Amount:</strong> ₹{selectedJob.stage2?.duty_amount || selectedJob.Stage2?.duty_amount || 0}</div>
                 </div>
               </div>
 
