@@ -41,7 +41,8 @@ export default function Stage1Page() {
       setLoading(true);
       console.log("Fetching jobs for stage1 employee...");
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/myjobs`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/pipeline/myjobs`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',

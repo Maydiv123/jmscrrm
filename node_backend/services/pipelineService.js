@@ -264,6 +264,21 @@ class PipelineService {
     }
   }
 
+  // Check if job number already exists
+  async checkJobNumberExists(job_no) {
+    try {
+      const existingJob = await PipelineJob.findOne({
+        where: { job_no: job_no },
+        attributes: ['id']
+      });
+
+      return !!existingJob;
+    } catch (error) {
+      console.error('Error checking job number existence:', error);
+      throw error;
+    }
+  }
+
   // Create new job with stage1 data
   async createJob(stage1Data, createdBy) {
     const transaction = await PipelineJob.sequelize.transaction();
@@ -950,7 +965,7 @@ class PipelineService {
       {
         model: Stage3Data,
         as: "Stage3", // Add the alias
-        attributes: { exclude: ["created_at", "updated_at"] },
+        attributes: { exclude: ["created_at", "updated_at", "approval_date"] },
       },
       {
         model: Stage3Container,
@@ -1082,6 +1097,34 @@ class PipelineService {
     } catch (error) {
       console.error('Error getting next job number:', error);
       throw new Error(`Failed to get next job number: ${error.message}`);
+    }
+  }
+
+  // Delete job and all related data
+  async deleteJob(jobId, userId) {
+    try {
+      const job = await this.getJobById(jobId);
+      if (!job) {
+        throw new Error("Job not found");
+      }
+
+      // Delete all related data in correct order to avoid foreign key constraints
+      await JobFile.destroy({ where: { job_id: jobId } });
+      await JobUpdate.destroy({ where: { job_id: jobId } });
+      await Stage4Data.destroy({ where: { job_id: jobId } });
+      await Stage3Container.destroy({ where: { job_id: jobId } });
+      await Stage3Data.destroy({ where: { job_id: jobId } });
+      await Stage2Data.destroy({ where: { job_id: jobId } });
+      await Stage1Container.destroy({ where: { job_id: jobId } });
+      await Stage1Data.destroy({ where: { job_id: jobId } });
+      
+      // Finally delete the main job record
+      await PipelineJob.destroy({ where: { id: jobId } });
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      throw new Error(`Failed to delete job: ${error.message}`);
     }
   }
 

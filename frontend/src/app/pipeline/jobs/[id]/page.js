@@ -19,6 +19,7 @@ export default function JobDetailsPage() {
   const [editingStage, setEditingStage] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isCheckingJobNumber, setIsCheckingJobNumber] = useState(false);
 
   // Manual stage advancement handler
   const handleAdvanceStage = async (jobId, targetStage) => {
@@ -171,9 +172,53 @@ export default function JobDetailsPage() {
   };
 
   const openEditModal = (stage, stageData) => {
+    console.log(`Opening edit modal for ${stage}:`, stageData);
     setEditingStage(stage);
     setEditFormData(stageData || {});
     setIsEditModalOpen(true);
+  };
+
+  // Check if job number exists
+  const checkJobNumberExists = async (job_no) => {
+    if (!job_no || job_no.trim() === '') {
+      return false;
+    }
+
+    try {
+      setIsCheckingJobNumber(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/pipeline/jobs/check-number?job_no=${encodeURIComponent(job_no)}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.exists;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking job number:', error);
+      return false;
+    } finally {
+      setIsCheckingJobNumber(false);
+    }
+  };
+
+  // Handle job number change with real-time validation
+  const handleJobNumberChange = async (value) => {
+    setEditFormData(prev => ({ ...prev, job_no: value }));
+    
+    // Only check if job number exists if value is not empty and different from current job number
+    if (value && value.trim() !== '' && value !== job?.job_no) {
+      const exists = await checkJobNumberExists(value);
+      if (exists) {
+        alert('This job number is already in use');
+      }
+    }
   };
 
   const closeEditModal = () => {
@@ -194,6 +239,87 @@ export default function JobDetailsPage() {
     
     setIsSaving(true);
     try {
+      // Prepare data for stage1 with containers
+      let dataToSend = { ...editFormData };
+      
+      if (editingStage === "stage1") {
+        // For stage1, we need to handle containers properly
+        const containers = [];
+        
+        // If we have container data in the form fields, create a container object
+        if (editFormData.container_no || editFormData.container_size || editFormData.date_of_arrival) {
+          containers.push({
+            container_no: editFormData.container_no || '',
+            container_size: editFormData.container_size || '20',
+            date_of_arrival: editFormData.date_of_arrival || null
+          });
+        }
+        
+        // If we have existing containers from the original data, preserve them
+        if (editFormData.containers && editFormData.containers.length > 0) {
+          // Update the first container with form data
+          const updatedContainers = [...editFormData.containers];
+          if (updatedContainers[0]) {
+            updatedContainers[0] = {
+              ...updatedContainers[0],
+              container_no: editFormData.container_no || updatedContainers[0].container_no || '',
+              container_size: editFormData.container_size || updatedContainers[0].container_size || '20',
+              date_of_arrival: editFormData.date_of_arrival || updatedContainers[0].date_of_arrival || null
+            };
+          }
+          dataToSend.containers = updatedContainers;
+        } else {
+          dataToSend.containers = containers;
+        }
+        
+        // Remove individual container fields as they're now in containers array
+        delete dataToSend.container_no;
+        delete dataToSend.container_size;
+        delete dataToSend.date_of_arrival;
+      }
+      
+      if (editingStage === "stage3") {
+        // For stage3, we need to handle containers properly
+        const containers = [];
+        
+        // If we have container data in the form fields, create a container object
+        if (editFormData.container_no || editFormData.container_size || editFormData.vehicle_no || editFormData.date_of_offloading) {
+          containers.push({
+            container_no: editFormData.container_no || '',
+            size: editFormData.container_size || '20',
+            vehicle_no: editFormData.vehicle_no || '',
+            date_of_offloading: editFormData.date_of_offloading || null,
+            empty_return_date: editFormData.empty_return_date || null
+          });
+        }
+        
+        // If we have existing containers from the original data, preserve them
+        if (editFormData.containers && editFormData.containers.length > 0) {
+          // Update the first container with form data
+          const updatedContainers = [...editFormData.containers];
+          if (updatedContainers[0]) {
+            updatedContainers[0] = {
+              ...updatedContainers[0],
+              container_no: editFormData.container_no || updatedContainers[0].container_no || '',
+              size: editFormData.container_size || updatedContainers[0].size || '20',
+              vehicle_no: editFormData.vehicle_no || updatedContainers[0].vehicle_no || '',
+              date_of_offloading: editFormData.date_of_offloading || updatedContainers[0].date_of_offloading || null,
+              empty_return_date: editFormData.empty_return_date || updatedContainers[0].empty_return_date || null
+            };
+          }
+          dataToSend.containers = updatedContainers;
+        } else {
+          dataToSend.containers = containers;
+        }
+        
+        // Remove individual container fields as they're now in containers array
+        delete dataToSend.container_no;
+        delete dataToSend.container_size;
+        delete dataToSend.vehicle_no;
+        delete dataToSend.date_of_offloading;
+        delete dataToSend.empty_return_date;
+      }
+      
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/pipeline/jobs/${params.id}/${editingStage}`,
         {
@@ -202,7 +328,7 @@ export default function JobDetailsPage() {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify(editFormData)
+          body: JSON.stringify(dataToSend)
         }
       );
 
@@ -339,7 +465,10 @@ export default function JobDetailsPage() {
                 {job.stage1 && (
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => openStageDetails("stage1", job.stage1)}
+                      onClick={() => openStageDetails("stage1", {
+                        ...job.stage1,
+                        containers: job.Stage1Containers || []
+                      })}
                       className="text-blue-600 hover:text-blue-800 transition-colors"
                       title="View complete details"
                     >
@@ -365,7 +494,10 @@ export default function JobDetailsPage() {
                     </button>
                     {isAdmin && (
                       <button
-                        onClick={() => openEditModal("stage1", job.stage1)}
+                        onClick={() => openEditModal("stage1", {
+                          ...job.stage1,
+                          containers: job.Stage1Containers || []
+                        })}
                         className="text-green-600 hover:text-green-800 transition-colors"
                         title="Edit stage data"
                       >
@@ -452,10 +584,56 @@ export default function JobDetailsPage() {
                         Container No
                       </p>
                       <p className="text-sm text-gray-900">
-                        {job.stage1.container_no || ""}
+                        {job.Stage1Containers && job.Stage1Containers.length > 0 
+                          ? job.Stage1Containers.map(container => container.container_no).join(', ')
+                          : job.stage1?.container_no || ""
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Container Size
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {job.Stage1Containers && job.Stage1Containers.length > 0 
+                          ? job.Stage1Containers.map(container => container.container_size).join(', ')
+                          : job.stage1?.container_size || ""
+                        }
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Containers */}
+                  {job.Stage1Containers && job.Stage1Containers.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">
+                        Containers
+                      </h3>
+                      <div className="space-y-2">
+                        {job.Stage1Containers.map((container, index) => (
+                          <div key={index} className="bg-gray-50 p-3 rounded">
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="font-medium">Container No:</span>{" "}
+                                {container.container_no || ""}
+                              </div>
+                              <div>
+                                <span className="font-medium">Size:</span>{" "}
+                                {container.container_size || ""}
+                              </div>
+                              <div>
+                                <span className="font-medium">Date of Arrival:</span>{" "}
+                                {container.date_of_arrival 
+                                  ? new Date(container.date_of_arrival).toLocaleDateString()
+                                  : ""
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
                   {/* User Information */}
                   <div className="mt-4 p-3 bg-gray-50 rounded-lg">
@@ -530,7 +708,10 @@ export default function JobDetailsPage() {
                     </button>
                     {isAdmin && (
                       <button
-                        onClick={() => openEditModal("stage2", job.stage2)}
+                        onClick={() => openEditModal("stage2", {
+                          ...job.stage2,
+                          containers: job.Stage2Containers || []
+                        })}
                         className="text-green-600 hover:text-green-800 transition-colors"
                         title="Edit stage data"
                       >
@@ -584,14 +765,6 @@ export default function JobDetailsPage() {
                       </p>
                       <p className="text-sm text-gray-900">
                         {job.stage2.documents_type || ""}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Approval Date
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {formatDate(job.stage2.approval_date)}
                       </p>
                     </div>
                     <div>
@@ -685,7 +858,10 @@ export default function JobDetailsPage() {
                     </button>
                     {isAdmin && (
                       <button
-                        onClick={() => openEditModal("stage3", job.stage3)}
+                        onClick={() => openEditModal("stage3", {
+                          ...job.stage3,
+                          containers: job.Stage3Containers || []
+                        })}
                         className="text-green-600 hover:text-green-800 transition-colors"
                         title="Edit stage data"
                       >
@@ -851,6 +1027,30 @@ export default function JobDetailsPage() {
                       </p>
                       <p className="text-sm text-gray-900">
                         {formatDate(job.stage3.edi_date)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Filing Requirement
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {job.stage3.filing_requirement || ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Checklist Sent Date
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(job.stage3.checklist_sent_date)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Approval Date
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(job.stage3.approval_date)}
                       </p>
                     </div>
                   </div>
@@ -1155,12 +1355,19 @@ export default function JobDetailsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Job No
                       </label>
-                      <input
-                        type="text"
-                        value={editFormData.job_no || ""}
-                        onChange={(e) => handleEditFormChange("job_no", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={editFormData.job_no || ""}
+                          onChange={(e) => handleJobNumberChange(e.target.value)}
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isCheckingJobNumber ? 'pr-8' : ''}`}
+                        />
+                        {isCheckingJobNumber && (
+                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1455,7 +1662,10 @@ export default function JobDetailsPage() {
                       </label>
                       <input
                         type="text"
-                        value={editFormData.container_no || ""}
+                        value={editFormData.containers && editFormData.containers.length > 0 
+                          ? editFormData.containers[0].container_no || ""
+                          : editFormData.container_no || ""
+                        }
                         onChange={(e) => handleEditFormChange("container_no", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
@@ -1466,7 +1676,10 @@ export default function JobDetailsPage() {
                       </label>
                       <input
                         type="text"
-                        value={editFormData.container_size || ""}
+                        value={editFormData.containers && editFormData.containers.length > 0 
+                          ? editFormData.containers[0].container_size || ""
+                          : editFormData.container_size || ""
+                        }
                         onChange={(e) => handleEditFormChange("container_size", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
@@ -1477,7 +1690,11 @@ export default function JobDetailsPage() {
                       </label>
                       <input
                         type="date"
-                        value={editFormData.date_of_arrival ? editFormData.date_of_arrival.split('T')[0] : ""}
+                        value={
+                          editFormData.containers && editFormData.containers.length > 0 
+                            ? (editFormData.containers[0].date_of_arrival ? editFormData.containers[0].date_of_arrival.split('T')[0] : "")
+                            : (editFormData.date_of_arrival ? editFormData.date_of_arrival.split('T')[0] : "")
+                        }
                         onChange={(e) => handleEditFormChange("date_of_arrival", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
@@ -1543,6 +1760,7 @@ export default function JobDetailsPage() {
 
               {editingStage === "stage2" && (
                 <>
+                  {console.log("Stage2 edit form data:", editFormData)}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1552,84 +1770,6 @@ export default function JobDetailsPage() {
                         type="text"
                         value={editFormData.hsn_code || ""}
                         onChange={(e) => handleEditFormChange("hsn_code", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Filing Requirement
-                      </label>
-                      <textarea
-                        value={editFormData.filing_requirement || ""}
-                        onChange={(e) => handleEditFormChange("filing_requirement", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows="3"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Checklist Sent Date
-                      </label>
-                      <input
-                        type="date"
-                        value={editFormData.checklist_sent_date ? editFormData.checklist_sent_date.split('T')[0] : ""}
-                        onChange={(e) => handleEditFormChange("checklist_sent_date", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Approval Date
-                      </label>
-                      <input
-                        type="date"
-                        value={editFormData.approval_date ? editFormData.approval_date.split('T')[0] : ""}
-                        onChange={(e) => handleEditFormChange("approval_date", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Bill of Entry No
-                      </label>
-                      <input
-                        type="text"
-                        value={editFormData.bill_of_entry_no || ""}
-                        onChange={(e) => handleEditFormChange("bill_of_entry_no", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Bill of Entry Date
-                      </label>
-                      <input
-                        type="date"
-                        value={editFormData.bill_of_entry_date ? editFormData.bill_of_entry_date.split('T')[0] : ""}
-                        onChange={(e) => handleEditFormChange("bill_of_entry_date", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ocean Freight
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editFormData.ocean_freight || ""}
-                        onChange={(e) => handleEditFormChange("ocean_freight", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Original Doc Received Date
-                      </label>
-                      <input
-                        type="date"
-                        value={editFormData.original_doct_recd_date ? editFormData.original_doct_recd_date.split('T')[0] : ""}
-                        onChange={(e) => handleEditFormChange("original_doct_recd_date", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -1804,6 +1944,7 @@ export default function JobDetailsPage() {
 
               {editingStage === "stage3" && (
                 <>
+                  {console.log("Stage3 edit form data:", editFormData)}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2029,6 +2170,84 @@ export default function JobDetailsPage() {
                         type="date"
                         value={editFormData.edi_date ? editFormData.edi_date.split('T')[0] : ""}
                         onChange={(e) => handleEditFormChange("edi_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Filing Requirement
+                      </label>
+                      <textarea
+                        value={editFormData.filing_requirement || ""}
+                        onChange={(e) => handleEditFormChange("filing_requirement", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows="3"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Checklist Sent Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.checklist_sent_date ? editFormData.checklist_sent_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("checklist_sent_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Approval Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.approval_date ? editFormData.approval_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("approval_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill of Entry No
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.bill_of_entry_no || ""}
+                        onChange={(e) => handleEditFormChange("bill_of_entry_no", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bill of Entry Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.bill_of_entry_date ? editFormData.bill_of_entry_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("bill_of_entry_date", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ocean Freight
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.ocean_freight || ""}
+                        onChange={(e) => handleEditFormChange("ocean_freight", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Original Doc Received Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.original_doct_recd_date ? editFormData.original_doct_recd_date.split('T')[0] : ""}
+                        onChange={(e) => handleEditFormChange("original_doct_recd_date", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>

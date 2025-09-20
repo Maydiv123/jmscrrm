@@ -12,6 +12,7 @@ router.use(attachment);
 router.get('/jobs', pipelineController.getAllJobs);
 router.get('/myjobs', pipelineController.getMyJobs);
 router.get('/jobs/next-number', pipelineController.getNextJobNumber);
+router.get('/jobs/check-number', pipelineController.checkJobNumberExists);
 router.get('/jobs/:id', pipelineController.getJobById);
 router.post('/jobs', pipelineController.createJob);
 router.put('/jobs/:id', pipelineController.updateJob);
@@ -24,6 +25,7 @@ router.post('/jobs/:id/stage3', pipelineController.updateStage3);
 router.post('/jobs/:id/stage4', pipelineController.updateStage4);
 router.post('/jobs/:id/advance-stage', pipelineController.advanceJobStage);
 router.get('/jobs/:id/stage-history', pipelineController.getJobStageHistory);
+router.delete('/jobs/:id', pipelineController.deleteJob);
 
 // File routes
 router.post('/files/upload', upload.single('file'), pipelineController.uploadFile);

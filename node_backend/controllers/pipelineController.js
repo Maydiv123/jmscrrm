@@ -116,6 +116,32 @@ class PipelineController {
     }
   }
 
+  // Check if job number exists
+  async checkJobNumberExists(req, res) {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Check if user is admin, subadmin, or stage1_employee
+      if (!req.user.isAdmin && req.user.role !== "subadmin" && req.user.role !== "stage1_employee") {
+        return res.status(403).json({ error: "Access denied. Only admin, subadmin, and stage1 employees can access this." });
+      }
+
+      const { job_no } = req.query;
+      
+      if (!job_no) {
+        return res.status(400).json({ error: "Job number is required" });
+      }
+
+      const exists = await pipelineService.checkJobNumberExists(job_no);
+      res.json({ exists });
+    } catch (error) {
+      console.error('CheckJobNumberExists error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   // Create new job
   async createJob(req, res) {
     try {
@@ -543,6 +569,34 @@ class PipelineController {
         return false;
     }
   }
+
+  // Delete job (admin only)
+  deleteJob = async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Check if user is admin
+      if (!req.user.isAdmin) {
+        return res.status(403).json({ error: "Access denied. Admin privileges required." });
+      }
+
+      const jobId = parseInt(req.params.id);
+      if (isNaN(jobId)) {
+        return res.status(400).json({ error: "Invalid job ID" });
+      }
+
+      await pipelineService.deleteJob(jobId, req.session.userId);
+
+      res.json({ success: true, message: "Job deleted successfully" });
+    } catch (error) {
+      if (error.message === "Job not found") {
+        return res.status(404).json({ error: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  };
 }
 
 module.exports = new PipelineController();

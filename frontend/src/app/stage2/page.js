@@ -13,7 +13,6 @@ export default function Stage2Page() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({
     hsn_code: '',
-    approval_date: '',
     drn_entries: [{ 
       drn_no: '', 
       irn_entries: [{ 
@@ -631,20 +630,6 @@ export default function Stage2Page() {
                 </div>
 
 
-                {/* Approval Date */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Approval Date</label>
-                  <input
-                    type="date"
-                    name="approval_date"
-                    value={formData.approval_date || ''}
-                    onChange={handleInputChange}
-                    className={`w-full border rounded-md px-3 py-2 text-black ${
-                      errors.approval_date ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.approval_date && <p className="text-red-500 text-xs mt-1">{errors.approval_date}</p>}
-                </div>
 
 
 

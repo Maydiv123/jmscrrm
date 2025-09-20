@@ -35,6 +35,8 @@ export default function Stage3Page() {
     checklist_sent_date: '',
     bill_of_entry_no: '',
     bill_of_entry_date: '',
+    // Moved from Stage 2
+    approval_date: '',
     containers: [
       {
         container_no: '',
@@ -699,6 +701,21 @@ export default function Stage3Page() {
                       />
                     {errors.out_of_charge && <p className="text-red-500 text-xs mt-1">{errors.out_of_charge}</p>}
                   </div>
+                </div>
+
+                {/* Approval Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Approval Date</label>
+                  <input
+                    type="date"
+                    name="approval_date"
+                    value={formData.approval_date || ''}
+                    onChange={handleInputChange}
+                    className={`w-full border rounded-md px-3 py-2 text-black ${
+                      errors.approval_date ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.approval_date && <p className="text-red-500 text-xs mt-1">{errors.approval_date}</p>}
                 </div>
 
                 {/* Financial Information */}

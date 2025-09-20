@@ -139,17 +139,59 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Container No</p>
-                <p className="text-sm text-gray-900">{stageData.container_no || ''}</p>
+                <p className="text-sm text-gray-900">
+                  {stageData.containers && stageData.containers.length > 0 
+                    ? stageData.containers.map(container => container.container_no).join(', ')
+                    : stageData.container_no || ''
+                  }
+                </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Container Size</p>
-                <p className="text-sm text-gray-900">{stageData.container_size || ''}</p>
+                <p className="text-sm text-gray-900">
+                  {stageData.containers && stageData.containers.length > 0 
+                    ? stageData.containers.map(container => container.container_size).join(', ')
+                    : stageData.container_size || ''
+                  }
+                </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Date of Arrival</p>
-                <p className="text-sm text-gray-900">{formatDate(stageData.date_of_arrival)}</p>
+                <p className="text-sm text-gray-900">
+                  {stageData.containers && stageData.containers.length > 0 
+                    ? stageData.containers.map(container => formatDate(container.date_of_arrival)).join(', ')
+                    : formatDate(stageData.date_of_arrival)
+                  }
+                </p>
               </div>
             </div>
+            
+            {/* Containers */}
+            {stageData.containers && stageData.containers.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Containers</h3>
+                <div className="space-y-3">
+                  {stageData.containers.map((container, index) => (
+                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Container No</p>
+                          <p className="text-sm text-gray-900">{container.container_no || ''}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Size</p>
+                          <p className="text-sm text-gray-900">{container.container_size || ''}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Date of Arrival</p>
+                          <p className="text-sm text-gray-900">{formatDate(container.date_of_arrival)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
 

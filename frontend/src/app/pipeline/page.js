@@ -55,6 +55,9 @@ export default function PipelinePage() {
   const [lastConsigneeUpdate, setLastConsigneeUpdate] = useState(null);
   const [lastShipperUpdate, setLastShipperUpdate] = useState(null);
   const [nextJobNumber, setNextJobNumber] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState(null);
+  const [isCheckingJobNumber, setIsCheckingJobNumber] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -71,6 +74,54 @@ export default function PipelinePage() {
       }));
     }
   }, [nextJobNumber, showCreateModal]);
+
+  // Check if job number exists
+  const checkJobNumberExists = async (job_no) => {
+    if (!job_no || job_no.trim() === '') {
+      return false;
+    }
+
+    try {
+      setIsCheckingJobNumber(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/pipeline/jobs/check-number?job_no=${encodeURIComponent(job_no)}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.exists;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking job number:', error);
+      return false;
+    } finally {
+      setIsCheckingJobNumber(false);
+    }
+  };
+
+  // Handle job number change with real-time validation
+  const handleJobNumberChange = async (value) => {
+    setFormData(prev => ({ ...prev, job_no: value }));
+    
+    // Clear previous job number error
+    if (errors.job_no) {
+      setErrors(prev => ({ ...prev, job_no: '' }));
+    }
+    
+    // Only check if job number exists for new jobs and if value is not empty
+    if (!editingJob && value && value.trim() !== '') {
+      const exists = await checkJobNumberExists(value);
+      if (exists) {
+        setErrors(prev => ({ ...prev, job_no: 'This job number is already in use' }));
+      }
+    }
+  };
 
 
 
@@ -127,9 +178,10 @@ export default function PipelinePage() {
         // Admin and subadmin see all jobs and users
         console.log("Admin/Subadmin user - fetching all jobs and users");
         try {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
           [jobsRes, usersRes] = await Promise.all([
-            fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/jobs", { credentials: "include" }),
-            fetch(process.env.NEXT_PUBLIC_API_URL + "/api/users", { credentials: "include" })
+            fetch(apiUrl + "/api/pipeline/jobs", { credentials: "include" }),
+            fetch(apiUrl + "/api/users", { credentials: "include" })
           ]);
         } catch (err) {
           console.log("Network error, using sample data");
@@ -167,7 +219,8 @@ export default function PipelinePage() {
         // Employee sees only their stage jobs
         console.log("Employee user - fetching stage jobs only");
         try {
-          jobsRes = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/myjobs", { credentials: "include" });
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+          jobsRes = await fetch(apiUrl + "/api/pipeline/myjobs", { credentials: "include" });
           usersRes = { ok: true, status: 200 }; // Mock successful response for users
         } catch (err) {
           console.log("Network error, using sample data");
@@ -276,7 +329,8 @@ export default function PipelinePage() {
         return;
       }
 
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/jobs/next-number", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(apiUrl + "/api/pipeline/jobs/next-number", {
         credentials: "include"
       });
       
@@ -308,7 +362,8 @@ export default function PipelinePage() {
         return;
       }
 
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/consignees", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(apiUrl + "/api/consignees", {
         credentials: "include"
       });
       
@@ -352,7 +407,8 @@ export default function PipelinePage() {
         return;
       }
 
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/shippers", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(apiUrl + "/api/shippers", {
         credentials: "include"
       });
       
@@ -494,12 +550,20 @@ export default function PipelinePage() {
     return error;
   };
 
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors = {};
     
     // Validate required fields
     if (!formData.job_no.trim()) {
       newErrors.job_no = 'Job number is required';
+    } else {
+      // Check if job number already exists (only for new jobs, not when editing)
+      if (!editingJob) {
+        const exists = await checkJobNumberExists(formData.job_no);
+        if (exists) {
+          newErrors.job_no = 'This job number is already in use';
+        }
+      }
     }
     if (!formData.job_date) {
       newErrors.job_date = 'Job date is required';
@@ -695,6 +759,36 @@ export default function PipelinePage() {
         </div>
       );
     }
+
+    // Special case for job_no field - use custom handler for real-time validation
+    if (name === 'job_no') {
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {label} {required && <span className="text-red-500">*</span>}
+          </label>
+          <div className="relative">
+            <input
+              type={type}
+              name={name}
+              value={formData[name]}
+              onChange={(e) => handleJobNumberChange(e.target.value)}
+              className={`${inputClass} ${isCheckingJobNumber ? 'pr-8' : ''}`}
+              placeholder={placeholder}
+              required={required}
+            />
+            {isCheckingJobNumber && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              </div>
+            )}
+          </div>
+          {isError && (
+            <p className="text-red-500 text-xs mt-1">{isError}</p>
+          )}
+        </div>
+      );
+    }
     
     if (type === 'textarea') {
       return (
@@ -769,7 +863,7 @@ export default function PipelinePage() {
     e.preventDefault();
     
     // Validate form before submission
-    if (!validateForm()) {
+    if (!(await validateForm())) {
       return;
     }
     
@@ -817,7 +911,8 @@ export default function PipelinePage() {
       
       const jsonBody = JSON.stringify(testData);
       console.log("JSON body:", jsonBody);
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/pipeline/jobs", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(apiUrl + "/api/pipeline/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -920,11 +1015,49 @@ export default function PipelinePage() {
     setShowEditModal(true);
   };
 
+  const handleDeleteJob = (job) => {
+    setJobToDelete(job);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteJob = async () => {
+    if (!jobToDelete) return;
+    
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/pipeline/jobs/${jobToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        // Remove the job from the local state
+        setJobs(prevJobs => prevJobs.filter(job => job.id !== jobToDelete.id));
+        setFilteredJobs(prevJobs => prevJobs.filter(job => job.id !== jobToDelete.id));
+        
+        // Show success message
+        alert('Job deleted successfully');
+      } else {
+        const errorData = await response.json();
+        alert(`Error deleting job: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Error deleting job. Please try again.');
+    } finally {
+      setShowDeleteModal(false);
+      setJobToDelete(null);
+    }
+  };
+
   const handleUpdateJob = async (e) => {
     e.preventDefault();
     
     // Validate form before submission
-    if (!validateForm()) {
+    if (!(await validateForm())) {
       return;
     }
     
@@ -943,7 +1076,8 @@ export default function PipelinePage() {
         containers: validContainers
       };
 
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + `/api/pipeline/jobs/${editingJob.id}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(apiUrl + `/api/pipeline/jobs/${editingJob.id}`, {
         method: 'PUT',
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -1056,23 +1190,21 @@ export default function PipelinePage() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              {/* Search Bar - Only for Admin and Subadmin */}
-              {(isAdmin || isSubadmin) && (
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search by Job No..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-gray-900"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
+              {/* Search Bar - For all users */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by Job No..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-gray-900"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </div>
-              )}
+              </div>
               
               {(isAdmin || isSubadmin || userRole === 'stage1_employee') && (
                 <button
@@ -1168,13 +1300,22 @@ export default function PipelinePage() {
                           View Details
                         </button>
                         {(isAdmin || isSubadmin) && (
-                          <button
-                            onClick={() => handleEditJob(job)}
-                            className="text-yellow-600 hover:text-yellow-900"
-                            title="Edit Job"
-                          >
-                            ✏️
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleEditJob(job)}
+                              className="text-yellow-600 hover:text-yellow-900"
+                              title="Edit Job"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDeleteJob(job)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete Job"
+                            >
+                              🗑️
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -1621,6 +1762,48 @@ export default function PipelinePage() {
                    </button>
                  </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && jobToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Delete Job
+                </h3>
+                <p className="text-sm text-gray-500 mb-6">
+                  Are you sure you want to delete job <strong>{jobToDelete.job_no}</strong>? This action cannot be undone and will permanently remove all job data, files, and history.
+                </p>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setJobToDelete(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteJob}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Delete Job
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
