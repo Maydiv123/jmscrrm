@@ -13,11 +13,7 @@ export default function Stage2Page() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({
     hsn_code: '',
-    filing_requirement: '',
-    checklist_sent_date: '',
     approval_date: '',
-    bill_of_entry_no: '',
-    bill_of_entry_date: '',
     drn_entries: [{ 
       drn_no: '', 
       irn_entries: [{ 
@@ -149,20 +145,8 @@ export default function Stage2Page() {
         if (value && value.length < 2) error = 'HSN code must be at least 2 characters';
         else if (value && !/^[0-9]+$/.test(value)) error = 'HSN code must contain only numbers';
         break;
-      case 'filing_requirement':
-        if (value && value.length < 3) error = 'Filing requirement must be at least 3 characters';
-        break;
-      case 'checklist_sent_date':
-        if (value && new Date(value) > new Date()) error = 'Checklist sent date cannot be in the future';
-        break;
       case 'approval_date':
         if (value && new Date(value) > new Date()) error = 'Approval date cannot be in the future';
-        break;
-      case 'bill_of_entry_no':
-        if (value && value.length < 2) error = 'Bill of entry number must be at least 2 characters';
-        break;
-      case 'bill_of_entry_date':
-        if (value && new Date(value) > new Date()) error = 'Bill of entry date cannot be in the future';
         break;
       case 'drn_entries':
         // Validate all DRN entries
@@ -212,12 +196,6 @@ export default function Stage2Page() {
     // Validate required fields
     if (!formData.hsn_code.trim()) {
       newErrors.hsn_code = 'HSN code is required';
-    }
-    if (!formData.filing_requirement.trim()) {
-      newErrors.filing_requirement = 'Filing requirement is required';
-    }
-    if (!formData.bill_of_entry_no.trim()) {
-      newErrors.bill_of_entry_no = 'Bill of entry number is required';
     }
     
     // Validate all other fields
@@ -290,11 +268,7 @@ export default function Stage2Page() {
         if (completeJob.stage2) {
           setFormData({
             hsn_code: completeJob.stage2.hsn_code || '',
-            filing_requirement: completeJob.stage2.filing_requirement || '',
-            checklist_sent_date: completeJob.stage2.checklist_sent_date ? completeJob.stage2.checklist_sent_date.split('T')[0] : '',
             approval_date: completeJob.stage2.approval_date ? completeJob.stage2.approval_date.split('T')[0] : '',
-            bill_of_entry_no: completeJob.stage2.bill_of_entry_no || '',
-            bill_of_entry_date: completeJob.stage2.bill_of_entry_date ? completeJob.stage2.bill_of_entry_date.split('T')[0] : '',
             drn_entries: completeJob.stage2.drn_entries ? 
               completeJob.stage2.drn_entries.map(entry => ({
                 drn_no: entry.drn_no || '',
@@ -317,11 +291,7 @@ export default function Stage2Page() {
           // Reset form for new entry
           setFormData({
             hsn_code: '', 
-            filing_requirement: '', 
-            checklist_sent_date: '', 
-            approval_date: '',
-            bill_of_entry_no: '', 
-            bill_of_entry_date: '', 
+            approval_date: '', 
             drn_entries: [{ drn_no: '', irn_entries: [{ irn_number: '', documents_type: '' }] }],
             // Initialize Stage 1 fields
             invoice_no: completeJob.Stage1?.invoice_no || completeJob.stage1?.invoice_no || '',
@@ -337,11 +307,7 @@ export default function Stage2Page() {
         setSelectedJob(job);
         setFormData({
           hsn_code: '', 
-          filing_requirement: '', 
-          checklist_sent_date: '', 
-          approval_date: '',
-          bill_of_entry_no: '', 
-          bill_of_entry_date: '', 
+          approval_date: '', 
           drn_entries: [{ drn_no: '', irn_entries: [{ irn_number: '', documents_type: '' }] }],
           invoice_no: '',
           gateway_igm: '',
@@ -356,11 +322,7 @@ export default function Stage2Page() {
       setSelectedJob(job);
       setFormData({
         hsn_code: '', 
-        filing_requirement: '', 
-        checklist_sent_date: '', 
-        approval_date: '',
-        bill_of_entry_no: '', 
-        bill_of_entry_date: '', 
+        approval_date: '', 
         drn_entries: [{ drn_no: '', irn_entries: [{ irn_number: '', documents_type: '' }] }],
         invoice_no: '',
         gateway_igm: '',
@@ -668,79 +630,22 @@ export default function Stage2Page() {
 
                 </div>
 
+
+                {/* Approval Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Filing Requirement</label>
-                  <textarea
-                    name="filing_requirement"
-                    value={formData.filing_requirement || ''}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Approval Date</label>
+                  <input
+                    type="date"
+                    name="approval_date"
+                    value={formData.approval_date || ''}
                     onChange={handleInputChange}
                     className={`w-full border rounded-md px-3 py-2 text-black ${
-                      errors.filing_requirement ? 'border-red-500' : 'border-gray-300'
+                      errors.approval_date ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    rows="3"
                   />
-                  {errors.filing_requirement && <p className="text-red-500 text-xs mt-1">{errors.filing_requirement}</p>}
+                  {errors.approval_date && <p className="text-red-500 text-xs mt-1">{errors.approval_date}</p>}
                 </div>
 
-                {/* Checklist and Approval */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Checklist Sent Date</label>
-                    <input
-                      type="date"
-                      name="checklist_sent_date"
-                      value={formData.checklist_sent_date || ''}
-                      onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 text-black ${
-                        errors.checklist_sent_date ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.checklist_sent_date && <p className="text-red-500 text-xs mt-1">{errors.checklist_sent_date}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Approval Date</label>
-                    <input
-                      type="date"
-                      name="approval_date"
-                      value={formData.approval_date || ''}
-                      onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 text-black ${
-                        errors.approval_date ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.approval_date && <p className="text-red-500 text-xs mt-1">{errors.approval_date}</p>}
-                  </div>
-                </div>
-
-                {/* Bill of Entry */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bill of Entry No.</label>
-                    <input
-                      type="text"
-                      name="bill_of_entry_no"
-                      value={formData.bill_of_entry_no || ''}
-                      onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 text-black ${
-                        errors.bill_of_entry_no ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.bill_of_entry_no && <p className="text-red-500 text-xs mt-1">{errors.bill_of_entry_no}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bill of Entry Date</label>
-                    <input
-                      type="date"
-                      name="bill_of_entry_date"
-                      value={formData.bill_of_entry_date || ''}
-                      onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 text-black ${
-                        errors.bill_of_entry_date ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.bill_of_entry_date && <p className="text-red-500 text-xs mt-1">{errors.bill_of_entry_date}</p>}
-                  </div>
-                </div>
 
 
                 {/* Multiple DRN Entries */}

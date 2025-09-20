@@ -29,6 +29,11 @@ module.exports = (sequelize) => {
     duty_amount: DataTypes.FLOAT,
     duty_paid_by: DataTypes.STRING,
     destination_charges: DataTypes.FLOAT,
+    // Additional fields moved from Stage 2
+    filing_requirement: DataTypes.TEXT,
+    checklist_sent_date: DataTypes.DATE,
+    bill_of_entry_no: DataTypes.STRING,
+    bill_of_entry_date: DataTypes.DATE,
     bill_of_entry_upload: DataTypes.STRING,
     created_by: {
       type: DataTypes.INTEGER,

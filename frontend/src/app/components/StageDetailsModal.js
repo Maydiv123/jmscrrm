@@ -166,24 +166,8 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
                 <p className="text-sm text-gray-900">{stageData.documents_type || ''}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Filing Requirement</p>
-                <p className="text-sm text-gray-900">{stageData.filing_requirement || ''}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Checklist Sent</p>
-                <p className="text-sm text-gray-900">{formatDate(stageData.checklist_sent_date)}</p>
-              </div>
-              <div>
                 <p className="text-sm font-medium text-gray-600">Approval Date</p>
                 <p className="text-sm text-gray-900">{formatDate(stageData.approval_date)}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Bill of Entry No</p>
-                <p className="text-sm text-gray-900">{stageData.bill_of_entry_no || ''}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Bill of Entry Date</p>
-                <p className="text-sm text-gray-900">{formatDate(stageData.bill_of_entry_date)}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Duty Amount</p>
@@ -260,6 +244,22 @@ export default function StageDetailsModal({ isOpen, onClose, stage, stageData, s
               <div>
                 <p className="text-sm font-medium text-gray-600">Dispatch Info</p>
                 <p className="text-sm text-gray-900">{stageData.dispatch_info || ''}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Filing Requirement</p>
+                <p className="text-sm text-gray-900">{stageData.filing_requirement || ''}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Checklist Sent Date</p>
+                <p className="text-sm text-gray-900">{formatDate(stageData.checklist_sent_date)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Bill of Entry No</p>
+                <p className="text-sm text-gray-900">{stageData.bill_of_entry_no || ''}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Bill of Entry Date</p>
+                <p className="text-sm text-gray-900">{formatDate(stageData.bill_of_entry_date)}</p>
               </div>
             </div>
             

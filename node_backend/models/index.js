@@ -3,7 +3,7 @@ const { Sequelize } = require('sequelize');
 const path = require('path');
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'jms_db',
+  process.env.DB_NAME || 'jms_database',
   process.env.DB_USER || 'root',
   process.env.DB_PASS || '',
   {

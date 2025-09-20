@@ -13,11 +13,7 @@ module.exports = (sequelize) => {
       allowNull: false
     },
     hsn_code: DataTypes.STRING,
-    filing_requirement: DataTypes.TEXT,
-    checklist_sent_date: DataTypes.DATE,
     approval_date: DataTypes.DATE,
-    bill_of_entry_no: DataTypes.STRING,
-    bill_of_entry_date: DataTypes.DATE,
     drn_entries: DataTypes.JSON, // Changed to JSON to store array of DRN entries with IRN numbers
     document_1: DataTypes.STRING,
     document_2: DataTypes.STRING,

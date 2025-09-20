@@ -588,42 +588,10 @@ export default function JobDetailsPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Filing Requirement
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {job.stage2.filing_requirement || ""}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Checklist Sent
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {formatDate(job.stage2.checklist_sent_date)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
                         Approval Date
                       </p>
                       <p className="text-sm text-gray-900">
                         {formatDate(job.stage2.approval_date)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Bill of Entry No
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {job.stage2.bill_of_entry_no || ""}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Bill of Entry Date
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {formatDate(job.stage2.bill_of_entry_date)}
                       </p>
                     </div>
                     <div>
@@ -819,6 +787,38 @@ export default function JobDetailsPage() {
                       </p>
                       <p className="text-sm text-gray-900">
                         {job.stage3.dispatch_info || ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Filing Requirement
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {job.stage3.filing_requirement || ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Checklist Sent Date
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(job.stage3.checklist_sent_date)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Bill of Entry No
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {job.stage3.bill_of_entry_no || ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Bill of Entry Date
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(job.stage3.bill_of_entry_date)}
                       </p>
                     </div>
                     <div>
